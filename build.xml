@@ -1,0 +1,10 @@
+<project name="Jonathan's Literate Programming" basedir="." default="release">
+
+    <import file="jdb-build-1.6.xml"/>
+    <property environment="env"/>
+    <property file="project.properties"/>
+
+    <target name="release" depends="build">
+    </target>
+
+</project>
