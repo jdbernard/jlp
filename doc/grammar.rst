@@ -1,7 +1,7 @@
-CodePage -> CodeBlock | DocBlock | CodePage
+CodePage -> (CodeBlock | DocBlock)*
 
 // lookahead 2 needed here
-DocBlock -> DirectiveBlock | MarkdownBlock | DocBlock
+DocBlock -> (DirectiveBlock | MarkdownBlock)+
 
 DirectiveBlock ->
     <DOC_START> <DIRECTIVE_START> "author" RemainingLine EOL MarkdownBlock? |
@@ -15,11 +15,17 @@ MarkdownLine ->
     <DOC_START> NOT_DIRECTIVE_START RemainingLine <EOL>
 
 RemainingLine -> NOT_EOL*
+
+OrgString ->
+    (<ORG_ID> <SLASH>)* <ORG_ID> <SLASH>?
+
 Tokens
 ------
 
-DOC_START -> "%%"
-EOL       -> "\n"
-NOT_EOL   -> ~"\n"
-DIRECTIVE_START -> "@"
+DOC_START           -> "%% "
+EOL                 -> "\n"
+NOT_EOL             -> ~"\n"
+DIRECTIVE_START     -> "@"
 NOT_DIRECTIVE_START -> ~"@"
+SLASH               -> "/"
+ORG_ID              -> ~"[/\n]"
