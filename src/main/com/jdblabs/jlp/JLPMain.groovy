@@ -2,7 +2,7 @@ package com.jdblabs.jlp
 
 public class JLPMain {
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
 
         JLPMain inst = new JLPMain()
 
@@ -25,7 +25,7 @@ public class JLPMain {
 
         // get files passed in
         def filenames = opts.getArgs()
-        def files = filenames.collect { new File(if) }
+        def files = filenames.collect { new File(it) }
         
         // -------- parse input -------- //
         files.inject(documentContext) { docContext, file ->
@@ -35,17 +35,6 @@ public class JLPMain {
     }
 
     public void parse(File inputFile, Map docCtx) {
-        def currentDocBlock
-        def thisDoc = [ blocks:[] ]
-
-        String docName = inputFile.name.substring(
-            0, inputFile.name.lastIndexOf('.'))
-
-        docCtx.docs[docName] = thisDoc
-
-        inputFile.eachLine { line, lineNum ->
-            
-        }
     }
 
 }
