@@ -1,31 +1,27 @@
-CodePage -> (CodeBlock | DocBlock)*
+CodePage -> DocBlock / CodeBlock
 
-// lookahead 2 needed here
-DocBlock -> (DirectiveBlock | MarkdownBlock)+
+DocBlock -> DirectiveBlock / MarkdownBlock
 
-DirectiveBlock ->
-    <DOC_START> <DIRECTIVE_START> "author" RemainingLine EOL MarkdownBlock? |
-    <DOC_START> <DIRECTIVE_START> "doc" RemainingLine EOL MarkdownBlock? |
-    <DOC_START> <DIRECTIVE_START> "example" RemainingLine EOL MarkdownBlock? |
-    <DOC_START> <DIRECTIVE_START> "org" OrgString EOL
+Code Block -> !DOC_START RemainingLine
+
+DirectiveBlock -> DOC_START DIRECTIVE_START (LongDirective / LineDirective)
 
 MarkdownBlock -> MarkdownLine+
 
-MarkdownLine ->
-    <DOC_START> NOT_DIRECTIVE_START RemainingLine <EOL>
+LongDirective ->
+    (AUTHOR_DIR / DOC_DIR / EXAMPLE_DIR) RemainingLine MarkdownBlock?
 
-RemainingLine -> NOT_EOL*
+LineDirective -> ORG_DIR RemainingLine
 
-OrgString ->
-    (<ORG_ID> <SLASH>)* <ORG_ID> <SLASH>?
+MarkdownLine -> DOC_START !DIRECTIVE_START RemainingLine
+
+RemainingLine -> (!EOL)+, EOL
 
 Tokens
 ------
 
 DOC_START           -> "%% "
 EOL                 -> "\n"
-NOT_EOL             -> ~"\n"
 DIRECTIVE_START     -> "@"
-NOT_DIRECTIVE_START -> ~"@"
-SLASH               -> "/"
-ORG_ID              -> ~"[/\n]"
+
+

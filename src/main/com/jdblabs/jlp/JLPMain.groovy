@@ -1,6 +1,11 @@
 package com.jdblabs.jlp
 
+import org.parboiled.Parboiled
+import org.parboiled.parserunners.ReportingParseRunner
+
 public class JLPMain {
+
+    private JLPPegParser parser
 
     public static void main(String[] args) {
 
@@ -21,20 +26,26 @@ public class JLPMain {
             cli.usage()
             return }
 
-        Map documentContext = [ docs: [:] ]
-
         // get files passed in
         def filenames = opts.getArgs()
         def files = filenames.collect { new File(it) }
         
         // -------- parse input -------- //
-        files.inject(documentContext) { docContext, file ->
+        Map parsed = files.inject([:]) { docContext, file ->
             inst.parse(new File(file), docContext) }
 
         // -------- generate output -------- //
     }
 
-    public void parse(File inputFile, Map docCtx) {
+    public JLPMain() {
+        parser = Parboiled.createParser(JLPPegParser.class)
+    }
+
+    public Map parse(File inputFile, Map docCtx) {
+        def parseRunner = new ReportingParseRunner(parser.SourceFile())
+
+        // parse the file
+        def firstPass = parseRunner.run(inputFile)
     }
 
 }

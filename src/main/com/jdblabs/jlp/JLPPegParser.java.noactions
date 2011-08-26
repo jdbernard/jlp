@@ -15,17 +15,10 @@ import static com.jdblabs.jlp.ast.TextBlock.makeMarkdownBlock;
 @BuildParseTree
 public class JLPPegParser extends BaseParser<Object> {
 
-    int curLineNum = 1;
-
-    public Rule SourceFile() {
-        return Sequence(
-            clearLineCount(),
-            push(new ArrayList<Object>()),
-            ZeroOrMore(Sequence(
-                FirstOf(
-                    DocBlock(),
-                    CodeBlock()),
-                push(addToList(pop(), (List<Object>)pop()))))); }
+    public Rule CodePage() {
+        return ZeroOrMore(FirstOf(
+                DocBlock(),
+                CodeBlock())); }
 
     /**
      * Parses the rule:
@@ -34,17 +27,9 @@ public class JLPPegParser extends BaseParser<Object> {
      * Pushes a DocBlock object onto the stack.
      */
     Rule DocBlock() {
-        return Sequence(
-            push(new ArrayList<ASTNode>()),
-            OneOrMore(Sequence(
-                FirstOf(
+        return OneOrMore(FirstOf(
                     DirectiveBlock(),
-                    MarkdownBlock()),
-
-                // stack is now: [List<ASTNode>, BlockValue *top*]
-                // pop the Block, then List, pass to helper to add the
-                // Block to the list, then push the List back on
-                push(addToList((ASTNode)pop(), (List<ASTNode>)pop()))))); }
+                    MarkdownBlock())); }
 
     /**
      * Parses the rule:
@@ -54,13 +39,9 @@ public class JLPPegParser extends BaseParser<Object> {
      */
     Rule CodeBlock() {
         return Sequence(
-            push(curLineNum),
-            TestNot(DOC_START), RemainingLine(), push(match()),
+            TestNot(DOC_START), RemainingLine(),
             ZeroOrMore(Sequence(
-                TestNot(DOC_START), RemainingLine(),
-                push(popAsString() + match()))),
-                
-            push(makeCodeBlock(popAsString(), popAsInt()))); }
+                TestNot(DOC_START), RemainingLine()))); }
 
     /**
      * Parses the rule:
@@ -83,16 +64,9 @@ public class JLPPegParser extends BaseParser<Object> {
      */
     Rule LongDirective() {
         return Sequence(
-            push(curLineNum),
-            FirstOf(AUTHOR_DIR, DOC_DIR, EXAMPLE_DIR),  push(match()),
-            RemainingLine(),                            push(match()),
-            Optional(Sequence(
-                MarkdownBlock(),                        // pushes block
-                swap(),
-                push(popAsString() + ((TextBlock) pop()).value))),
-            
-            // pull off the value, type and create the directive
-            push(new Directive(popAsString(), popAsString(), popAsInt()))); }
+            FirstOf(AUTHOR_DIR, DOC_DIR, EXAMPLE_DIR),
+            RemainingLine(),
+            Optional(MarkdownBlock())); }
 
     /**
      * Parses the rule:
@@ -103,12 +77,8 @@ public class JLPPegParser extends BaseParser<Object> {
      */
     Rule LineDirective() {
         return Sequence(
-            push(curLineNum),
-            ORG_DIR,            push(match()),
-            RemainingLine(),
-
-            // pull off the value, type and create the directive
-            push(new Directive(match().trim(), popAsString(), popAsInt()))); }
+            ORG_DIR,
+            RemainingLine()); }
 
     /**
      * Parses the rule:
@@ -116,16 +86,7 @@ public class JLPPegParser extends BaseParser<Object> {
      *
      * Pushes a MarkdownBlock onto the stack as a string.
      */
-    Rule MarkdownBlock() {
-        return Sequence(
-            push(curLineNum),
-            MarkdownLine(), // pushes the value onto the stack
-            ZeroOrMore(Sequence(
-                MarkdownLine(),
-                swap(),
-                push(popAsString() + popAsString()))),
-            
-            push(makeMarkdownBlock(popAsString(), popAsInt()))); }
+    Rule MarkdownBlock() { return OneOrMore(MarkdownLine()); }
 
     /**
      * Parses the rule:
@@ -136,8 +97,7 @@ public class JLPPegParser extends BaseParser<Object> {
      */
     Rule MarkdownLine() {
         return Sequence(
-            DOC_START, TestNot(DIRECTIVE_START),
-            RemainingLine(), push(match())); }
+            DOC_START, TestNot(DIRECTIVE_START), RemainingLine()); }
 
     /**
      * Parses the rule:
@@ -145,7 +105,7 @@ public class JLPPegParser extends BaseParser<Object> {
      */
     @SuppressSubnodes
     Rule RemainingLine() {
-        return Sequence(OneOrMore(NOT_EOL), EOL, incLineCount()); }
+        return Sequence(OneOrMore(NOT_EOL), EOL); }
 
     Rule DOC_START      = String("%% ");
     Rule EOL            = FirstOf(Ch('\n'), EOI);
@@ -159,11 +119,10 @@ public class JLPPegParser extends BaseParser<Object> {
     Rule EXAMPLE_DIR  = IgnoreCase("example");
     Rule ORG_DIR      = IgnoreCase("org");
 
-    String popAsString() { return (String) pop(); }
+    String popAsString() {
+        return (String) pop(); }
 
-    Integer popAsInt() { return (Integer) pop(); }
-
-    static <T> List<T> addToList(T value, List<T> list) {
+    List<ASTNode> addToList(ASTNode value, List<ASTNode> list) {
         list.add(value);
         return list; }
 
@@ -171,8 +130,4 @@ public class JLPPegParser extends BaseParser<Object> {
         for (int i = 0; i < getContext().getValueStack().size(); i++) {
             System.out.println(i + ": " + peek(i)); }
         return true; }
-
-    boolean clearLineCount() { curLineNum = 1; return true; }
-
-    boolean incLineCount() { curLineNum++; return true; }
 }

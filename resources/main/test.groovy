@@ -4,7 +4,7 @@ import org.parboiled.parserunners.ReportingParseRunner
 import org.parboiled.parserunners.RecoveringParseRunner
 
 parser = Parboiled.createParser(JLPPegParser.class)
-parseRunner = new RecoveringParseRunner(parser.CodePage())
+parseRunner = new RecoveringParseRunner(parser.SourceFile())
 
 testLine = """%% This the first test line.
 %% Second Line
