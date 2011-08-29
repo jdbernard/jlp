@@ -1,5 +1,6 @@
 package com.jdblabs.jlp
 
+import com.jdblabs.jlp.ast.ASTNode
 import org.parboiled.Parboiled
 import org.parboiled.parserunners.ReportingParseRunner
 
@@ -31,8 +32,10 @@ public class JLPMain {
         def files = filenames.collect { new File(it) }
         
         // -------- parse input -------- //
-        Map parsed = files.inject([:]) { docContext, file ->
-            inst.parse(new File(file), docContext) }
+        Map parsedFiles = files.inject([:]) { acc, file ->
+            def parsed = inst.parse(new File(file))
+            acc[file.canonicalPath] = parsed
+            return acc }
 
         // -------- generate output -------- //
     }
@@ -41,11 +44,14 @@ public class JLPMain {
         parser = Parboiled.createParser(JLPPegParser.class)
     }
 
-    public Map parse(File inputFile, Map docCtx) {
+    public Map parse(File inputFile) {
         def parseRunner = new ReportingParseRunner(parser.SourceFile())
 
         // parse the file
-        def firstPass = parseRunner.run(inputFile)
+        return parseRunner.run(inputFile).resultValue
     }
 
+    public def generate(def emitter, List<ASTNode> blocks) {
+        // second pass, semantics
+    }
 }

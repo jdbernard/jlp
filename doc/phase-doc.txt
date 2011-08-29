@@ -1,0 +1,52 @@
+Parse phase
+===========
+
+    Init: none
+    Input: Map<Name, InputStream>
+    Output: Map<Name, ASTNode List>
+
+Generate phase
+==============
+
+    Input: Map<Name, AST Node List>
+    Output: Map<Name, String>
+    
+Emitter (object)
+----------------
+
+    Emitter is good for one emit run.
+
+    Object fields:
+        * where the value goes
+        * current emit state (may need existing state from generate phase)
+
+
+
++--Generate---------------------------------+
+|                                           |
+| GenerationState--+                        |
+|                  v                        |
+|            +->Emitter>-+                  |
+| [Sources]>-+->Emitter>-+->[Destinations]  |
+|            +->Emitter>-+                  |
+|                                           |
+|                                           |
++-------------------------------------------+
+
++--Emitter----------+
+|                   |
+| GenerationState   |
+| Source            |
+| Output            |
+|                   |
++-------------------+
+  
+Emit Process:
+
+    Order nodes, emit based on type.
+    Refer to generation state when neccessary.
+
+Emitters:
+
+    FormattingEmitter - accepts a paramets, formatter, that formats a block of
+        text.

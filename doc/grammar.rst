@@ -1,8 +1,8 @@
-CodePage -> DocBlock / CodeBlock
+SourceFile -> (DocBlock / CodeBlock)*
 
-DocBlock -> DirectiveBlock / MarkdownBlock
+DocBlock -> (DirectiveBlock / MarkdownBlock)+
 
-Code Block -> !DOC_START RemainingLine
+Code Block -> ((!DOC_START RemainingLine) / EmptyLine)+
 
 DirectiveBlock -> DOC_START DIRECTIVE_START (LongDirective / LineDirective)
 
@@ -15,7 +15,9 @@ LineDirective -> ORG_DIR RemainingLine
 
 MarkdownLine -> DOC_START !DIRECTIVE_START RemainingLine
 
-RemainingLine -> (!EOL)+, EOL
+RemainingLine -> (!EOL)+ (EOL / EOI)
+
+EmptyLine -> EOL
 
 Tokens
 ------
