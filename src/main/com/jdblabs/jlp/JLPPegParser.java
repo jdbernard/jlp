@@ -45,7 +45,7 @@ public class JLPPegParser extends BaseParser<Object> {
 
     /**
      * Parses the rule:
-     *  CodeBlock = !DOC_START RemainingLine
+     *  CodeBlock = !DocStart RemainingLine
      *
      * Pushes a CodeBlock onto the stack.
      */
@@ -53,24 +53,29 @@ public class JLPPegParser extends BaseParser<Object> {
         return Sequence(
             push(curLineNum),
             push(""),
-            OneOrMore(FirstOf(
-                Sequence(
-                    TestNot(DOC_START), RemainingLine(),
-                    push(popAsString() + match())),
-                Sequence(EmptyLine(), 
-                    push(popAsString() + match())))),
+            OneOrMore(Sequence(
+                TestNot(DocStart()), RemainingLine(),
+                push(popAsString() + match()))),
+
             push(makeCodeBlock(popAsString(),popAsInt()))); }
                 
     /**
      * Parses the rule:
+     *  DocStart = SPACE* DOC_START
+     */
+     Rule DocStart() {
+        return Sequence(ZeroOrMore(SPACE), DOC_START); }
+            
+    /**
+     * Parses the rule:
      *  DirectiveBlock =
-     *      DOC_START DIRECTIVE_START (LongDirective / LineDirective)
+     *      DocStart DIRECTIVE_START (LongDirective / LineDirective)
      *
      * Pushes a Directive onto the stack.
      */
     Rule DirectiveBlock() {
         return Sequence(
-            DOC_START, DIRECTIVE_START,
+            DocStart(), DIRECTIVE_START,
             FirstOf(LongDirective(), LineDirective())); }
 
     /**
@@ -129,13 +134,13 @@ public class JLPPegParser extends BaseParser<Object> {
     /**
      * Parses the rule:
      *  DocTextLine =
-     *      DOC_START !DIRECTIVE_START RemainingLine
+     *      DocStart !DIRECTIVE_START RemainingLine
      *
-     * Pushes the line value (not including the DOC_START) onto the stack.
+     * Pushes the line value (not including the DocStart) onto the stack.
      */
     Rule DocTextLine() {
         return Sequence(
-            DOC_START, TestNot(DIRECTIVE_START),
+            DocStart(), TestNot(DIRECTIVE_START),
             RemainingLine(), push(match())); }
 
     /**
@@ -144,10 +149,13 @@ public class JLPPegParser extends BaseParser<Object> {
      */
     @SuppressSubnodes
     Rule RemainingLine() {
-        return Sequence(OneOrMore(NOT_EOL), FirstOf(EOL, EOI), incLineCount()); }
+        return FirstOf(
+            Sequence(ZeroOrMore(NOT_EOL), EOL, incLineCount()),
 
-    Rule EmptyLine() {
-        return Sequence(EOL, incLineCount()); }
+            // allow EOI as a line delimiter only if the line is not empty,
+            // otherwise it will match infinitely if RemainingLine is used in a
+            // OneOrMore context.
+            Sequence(OneOrMore(NOT_EOL), EOI)); }    
 
     Rule DOC_START      = String("%% ");
     Rule EOL            = Ch('\n');

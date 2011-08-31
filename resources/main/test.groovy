@@ -1,5 +1,4 @@
-import com.jdblabs.jlp.EchoEmitter
-import com.jdblabs.jlp.JLPPegParser
+import com.jdblabs.jlp.*
 import org.parboiled.Parboiled
 import org.parboiled.parserunners.ReportingParseRunner
 import org.parboiled.parserunners.RecoveringParseRunner
@@ -16,24 +15,32 @@ simpleTest = {
     %% Second Line
     %% Third Line
     Fourth line
-    %% Fifth line
-    %% @author Sixth Line
-    %% @Example Seventh Line
-    %%    Markdown lines (eigth line)
-    %%    Still markdown (ninth line)
-    Tenth line is a code line
+
+    %% Sixth line
+    %% @author Seventh Line
+    %% @Example Eigth Line
+    %%    Markdown lines (ninth line)
+    %%    Still markdown (tenth line)
+    Eleventh line is a code line
     """
 
     parseRunner.run(testLine)
 }
 
 vbsTest = {
-    "Parsing vbs_db_records.hrl into 'vbsResult'."
-    "--------------------------------------------\n"
+    println "Parsing vbs_db_records.hrl into 'vbsResult'."
+    println "--------------------------------------------"
 
     vbsTestFile = new File('vbs_db_records.hrl')
     println "vbsTestFile is ${vbsTestFile.exists() ? 'present' : 'absent'}."
     vbsTestInput = vbsTestFile.text
 
-    parseRunner.run(vbsTestInput)
+    vbsParsed = parseRunner.run(vbsTestInput)
+
+    vbsResult = MarkdownGenerator.generateDocuments([vbs: vbsParsed.resultValue]).vbs
+
+    println "Writing to file 'vbs_result.html'."
+    println "----------------------------------"
+
+    (new File('vbs_result.html')).withWriter { out -> out.println vbsResult }
 }

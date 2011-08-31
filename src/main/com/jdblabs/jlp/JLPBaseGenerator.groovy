@@ -2,18 +2,28 @@ package com.jdblabs.jlp
 
 import com.jdblabs.jlp.ast.*
 import com.jdblabs.jlp.ast.Directive.DirectiveType
+import java.util.List
+import java.util.Map
 
-public  abstract class JLPBaseEmitter {
+public abstract class JLPBaseGenerator {
 
-    def generationState
+    protected Map docState
 
-    public JLPBaseEmitter(def generationState) {
-        this.generationState = generationState }
+    protected JLPBaseGenerator() {
+        docState = [orgs:           [:],
+                    currentDocId:   false ] }
 
-    public String emitDocument(List<ASTNode> sourceNodes) {
+    protected Map<String, String> generate(Map<String, List<ASTNode>> sources) {
+        Map result = [:]
+        sources.each { sourceId, sourceNodes ->
+            docState.currentDocId = sourceId
+            result[sourceId] = emitDocument(sourceNodes) }
+        return result }
+
+    protected String emitDocument(List<ASTNode> sourceNodes) {
         StringBuilder result =
             sourceNodes.inject(new StringBuilder()) { sb, node ->
-                sb.append(emit(node, generationState))
+                sb.append(emit(node))
                 return sb }
 
         return result.toString() }
@@ -24,15 +34,16 @@ public  abstract class JLPBaseEmitter {
 
         printQueue = docBlock.directives.collect { directive ->
             def queueItem = [line: directive.lineNumber, value: directive]
-            switch (direcive.type) {
-                case DirectiveType.Author:  queueItem.priority = 90; break
+            switch (directive.type) {
+                case DirectiveType.Author:  queueItem.priority = 50; break
                 case DirectiveType.Doc:     queueItem.priority = 50; break
                 case DirectiveType.Example: queueItem.priority = 50; break
-                case DirectiveType.Org:     queueItem.priority = 10; break 
+                case DirectiveType.Org:     queueItem.priority = 10; break }
+
             return queueItem }
 
         printQueue.addAll(docBlock.textBlocks.collect { textBlock ->
-            [ priority: 50, line: textBlock.lineNumber, value: textBlock ] }
+            [ priority: 50, line: textBlock.lineNumber, value: textBlock ] })
 
         // sort by priority, then by line number
         printQueue.sort(
@@ -45,7 +56,7 @@ public  abstract class JLPBaseEmitter {
             sb.append(emit(printable.value))
             return sb }
 
-        return result.toString() }
+        return result.toString() } 
 
     protected abstract String emit(TextBlock textBlock)
     protected abstract String emit(Directive directive)
