@@ -14,7 +14,8 @@ public class MarkdownGenerator extends JLPBaseGenerator {
     protected MarkdownGenerator() {
         super()
 
-        pegdown = new PegDownProcessor(Extensions.TABLES) }
+        pegdown = new PegDownProcessor(
+            Extensions.TABLES & Extensions.DEFINITIONS) }
 
     protected static Map<String, String> generateDocuments(
     Map<String, List<ASTNode>> sources) {

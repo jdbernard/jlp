@@ -1,29 +1,29 @@
-SourceFile -> (DocBlock / CodeBlock)*
+SourceFile ->
+    (Block / DocBlock / CodeBlock)+
 
-DocBlock -> (DirectiveBlock / MarkdownBlock)+
+Block ->
+    DocBlock CodeBlock
 
-Code Block -> ((!DOC_START RemainingLine) / EmptyLine)+
+DocBlock ->
+    (Directive / DocText)+
 
-DirectiveBlock -> DOC_START DIRECTIVE_START (LongDirective / LineDirective)
-
-MarkdownBlock -> MarkdownLine+
+Directive ->
+    DocLineStart AT (LongDirective / ShortDirective)
 
 LongDirective ->
-    (AUTHOR_DIR / DOC_DIR / EXAMPLE_DIR) RemainingLine MarkdownBlock?
+    ("author" / "doc" / "example") RemainingLine DocText?
 
-LineDirective -> ORG_DIR RemainingLine
+ShortDirective ->
+    ("org" / "copyright") RemainingLine
 
-MarkdownLine -> DOC_START !DIRECTIVE_START RemainingLine
+DocText ->
+    (DocLineStart !AT RemainingLine)+
 
-RemainingLine -> (!EOL)+ (EOL / EOI)
+DocLineStart ->
+    Space* DOC_LINE_START Space?
 
-EmptyLine -> EOL
+CodeBlock ->
+    (!DocLineStart RemainingLine)+
 
-Tokens
-------
-
-DOC_START           -> "%% "
-EOL                 -> "\n"
-DIRECTIVE_START     -> "@"
-
-
+RemainingLine ->
+   ((!EOL)* EOL) / ((!EOL)+ EOI)

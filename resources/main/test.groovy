@@ -43,4 +43,6 @@ vbsTest = {
     println "----------------------------------"
 
     (new File('vbs_result.html')).withWriter { out -> out.println vbsResult }
+
+    return [vbsParsed, vbsResult]
 }
