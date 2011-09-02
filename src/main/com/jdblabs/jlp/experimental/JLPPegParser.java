@@ -22,13 +22,67 @@ public class JLPPegParser extends BaseParser<Object> {
      */
     public Rule SourceFile() {
         return Sequence(
+            // At the start of processing a new SourceFile, we need to set up
+            // our internal state. 
+
+            // Clear the line count.
             clearLineCount(),
+
+            // Add the top-level SourceFile AST node.
             push(new SourceFile()),
 
+            // A SourceFile is made up of one or more Blocks
             OneOrMore(Sequence(
-                FirstOf(Block(), DocBlock(), CodeBlock()),
+                // All of these options result in one new Block pushed onto the
+                // stack.
+                FirstOf(
 
-                addBlock((ASTNode) pop())))); }
+                    // Match a whole Block. This pushes a Block on the stack.
+                    Block(),    
+
+                    // A standalone DocBlock. We will create an empty CodeBlock
+                    // to pair with it, then push a new Block onto the stack
+                    // made from the DocBlock and the empty CodeBlock
+                    Sequence(
+                        // 1. We need to remember the line number to create the
+                        // Block
+                        push(curLineNum),
+
+                        // 2. Match the DocBlock.
+                        DocBlock(),
+
+                        // 3. Create the empty CodeBlock.
+                        push(new CodeBlock(curLineNum)),
+
+                        // 4. Create the Block and push it onto the stack.
+                        push(new Block((CodeBlock) pop(), (DocBlock) pop(),
+                            popAsInt()))),
+
+                    // A standalone CodeBlock. Similar to the standalone
+                    // DocBlock, we will create an empty DocBlock to pair with
+                    // the CodeBlock to make a Block, which is pushed onto the
+                    // stack:
+                    //
+                    // *Note: With the way the parser is currently written,
+                    //        this will only match a CodeBlock that occurs
+                    //        before any DocBlock.*
+                    Sequence(
+                        // 1. Remember the line number for the Block.
+                        push(curLineNum),
+
+                        // 2. Create the empty DocBlock.
+                        push(new DocBlock(curLineNum)),
+
+                        // 3. Match the CodeBlock
+                        CodeBlock(),
+
+                        // 4. Create the Block and push it onto the stack
+                        push(new Block((CodeBlock) pop(), (DocBlock) pop(),
+                            popAsInt())))),
+
+                // pop the Block created by one of the above options and add it
+                // to the SourceFile
+                addBlockToSourceFile((Block) pop())))); }
 
     /**
      * Parses the rule:
@@ -71,7 +125,7 @@ public class JLPPegParser extends BaseParser<Object> {
 
     /**
      * Parses the rule:
-     *  Directive = DocLineStart AT (LongDirective / ShortFirective)
+     *  Directive = DocLineStart AT (LongDirective / ShortDirective)
      *
      * Pushes a Directive node on the stack.
      */
@@ -82,7 +136,7 @@ public class JLPPegParser extends BaseParser<Object> {
     /**
      * Parses the rule:
      *  LongDirective =
-     *      (AUTHOR_DIR / DOC_DIR / EXAMPLE_DIR) RemainingLine DocText?
+     *      (API_DIR / EXAMPLE_DIR) RemainingLine DocText?
      *
      * Pushes a Directive node onto the stack.
      */
@@ -90,7 +144,7 @@ public class JLPPegParser extends BaseParser<Object> {
         return Sequence(
             push(curLineNum),
 
-            FirstOf(AUTHOR_DIR, DOC_DIR, EXAMPLE_DIR),  push(match()),
+            FirstOf(API_DIR, EXAMPLE_DIR),  push(match()),
             RemainingLine(),                            push(match()),
 
             Optional(Sequence(
@@ -102,14 +156,14 @@ public class JLPPegParser extends BaseParser<Object> {
 
     /**
      * Parses the rule:
-     *  ShortDirective = (ORG_DIR / COPYRIGHT_DIR) RemainingLine
+     *  ShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingLine
      *
      * Pushes a Directive node onto the stack.
      */
     Rule ShortDirective() {
         return Sequence(
             push(curLineNum),
-            FirstOf(ORG_DIR, COPYRIGHT_DIR), push(match()),
+            FirstOf(AUTHOR_DIR, ORG_DIR, COPYRIGHT_DIR), push(match()),
             RemainingLine(),
             
             push(new Directive(match().trim(), popAsString(), popAsInt()))); }
@@ -127,27 +181,28 @@ public class JLPPegParser extends BaseParser<Object> {
                 DocLineStart(), TestNot(AT), RemainingLine(),
                 addToDocText(match())))); }
 
-    @SuppressSubnodes
     Rule DocLineStart() {
         return Sequence(
             ZeroOrMore(SPACE), DOC_LINE_START, Optional(SPACE)); }
 
-    @SuppressSubnodes
+    Rule NonEmptyLine() {
+        return Sequence(OneOrMore(NOT_EOL), FirstOf(EOL, EOI)); }
+
     Rule RemainingLine() {
         return FirstOf(
             Sequence(ZeroOrMore(NOT_EOL), EOL, incLineCount()),
             Sequence(OneOrMore(NOT_EOL), EOI, incLineCount())); }
 
-    Rule AT         = Ch('@');
-    Rule EOL        = OneOrMore(AnyOf("\r\n"));
-    Rule NOT_EOL    = Sequence(TestNot(EOL), ANY);
-    Rule SPACE      = AnyOf(" \t");
-    Rule DOC_LINE_START = String("%%");
+    Rule AT         = Ch('@').label("AT");
+    Rule EOL        = FirstOf(String("\r\n"), Ch('\n'), Ch('\r')).label("EOL");
+    Rule NOT_EOL    = Sequence(TestNot(EOL), ANY).label("NOT_EOL");
+    Rule SPACE      = AnyOf(" \t").label("SPACE");
+    Rule DOC_LINE_START = String("%%").label("DOC_LINE_START");
 
     // directive terminals
     Rule AUTHOR_DIR     = IgnoreCase("author");
     Rule COPYRIGHT_DIR  = IgnoreCase("copyright");
-    Rule DOC_DIR        = IgnoreCase("doc");
+    Rule API_DIR        = IgnoreCase("api");
     Rule EXAMPLE_DIR    = IgnoreCase("example");
     Rule ORG_DIR        = IgnoreCase("org");
 
@@ -159,7 +214,7 @@ public class JLPPegParser extends BaseParser<Object> {
 
     boolean incLineCount() { curLineNum++; return true; }
 
-    boolean addBlock(ASTNode block) {
+    boolean addBlockToSourceFile(Block block) {
         SourceFile sourceFile = (SourceFile) pop();
         sourceFile.blocks.add(block);
         return push(sourceFile); }

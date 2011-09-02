@@ -3,28 +3,36 @@ import org.parboiled.Parboiled
 import org.parboiled.parserunners.ReportingParseRunner
 import org.parboiled.parserunners.RecoveringParseRunner
 
-parser = Parboiled.createParser(JLPPegParser.class)
-parseRunner = new RecoveringParseRunner(parser.SourceFile())
+makeParser = {
+    println "Making the standard parser."
+    println "---------------------------"
 
+    parser = Parboiled.createParser(JLPPegParser.class)
+    parseRunner = new ReportingParseRunner(parser.SourceFile())
+}
+
+makeExperimentalParser = {
+    println "Making the experimental parser."
+    println "-------------------------------"
+
+    parser = Parboiled.createParser(com.jdblabs.jlp.experimental.JLPPegParser.class)
+    parseRunner = new ReportingParseRunner(parser.SourceFile())
+}
 
 simpleTest = {
-    "Parsing the simple test into 'result'.\n" +
-    "--------------------------------------\n"
+    println "Parsing the simple test into 'result'."
+    println "--------------------------------------"
 
     testLine = """%% This the first test line.
     %% Second Line
-    %% Third Line
-    Fourth line
+    %% Third Line \n\n Fifth line \n\n %% Seventh line \n\n
+    %% @author Eigth Line
+    %% @Example Ninth Line
+    %%    Markdown lines (tenth line)
+    %%    Still markdown (eleventh line)
+    Twelfth line is a code line"""
 
-    %% Sixth line
-    %% @author Seventh Line
-    %% @Example Eigth Line
-    %%    Markdown lines (ninth line)
-    %%    Still markdown (tenth line)
-    Eleventh line is a code line
-    """
-
-    parseRunner.run(testLine)
+    simpleResult = parseRunner.run(testLine)
 }
 
 vbsTest = {

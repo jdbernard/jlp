@@ -3,9 +3,9 @@ package com.jdblabs.jlp.experimental.ast
 public class Directive extends ASTNode {
 
     public static enum DirectiveType {
+        Api,
         Author,
         Copyright,
-        Doc,
         Example,
         Org;
         
