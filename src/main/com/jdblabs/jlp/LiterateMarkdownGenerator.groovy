@@ -1,7 +1,7 @@
-package com.jdblabs.jlp.experimental
+package com.jdblabs.jlp
 
-import com.jdblabs.jlp.experimental.ast.*
-import com.jdblabs.jlp.experimental.ast.Directive.DirectiveType
+import com.jdblabs.jlp.ast.*
+import com.jdblabs.jlp.ast.Directive.DirectiveType
 
 import org.pegdown.Extensions
 import org.pegdown.PegDownProcessor

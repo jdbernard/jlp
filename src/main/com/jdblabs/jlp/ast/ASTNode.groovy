@@ -1,5 +1,10 @@
 package com.jdblabs.jlp.ast
 
-public interface ASTNode {
-    public int getLineNumber()
+public class ASTNode {
+
+    protected int lineNumber
+
+    public ASTNode(int lineNum) { this.lineNumber = lineNum }
+
+    public int getLineNumber() { lineNumber }
 }

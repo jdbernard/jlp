@@ -1,4 +1,4 @@
-package com.jdblabs.jlp.experimental.ast
+package com.jdblabs.jlp.ast
 
 public class SourceFile {
     public List<ASTNode> blocks = []

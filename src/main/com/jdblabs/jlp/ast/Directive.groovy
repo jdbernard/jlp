@@ -1,10 +1,11 @@
 package com.jdblabs.jlp.ast
 
-public class Directive implements ASTNode {
+public class Directive extends ASTNode {
 
     public static enum DirectiveType {
+        Api,
         Author,
-        Doc,
+        Copyright,
         Example,
         Org;
         
@@ -13,14 +14,11 @@ public class Directive implements ASTNode {
 
     public final DirectiveType type;
     public final String value;
-    public final int lineNumber;
 
     public Directive(String value, String typeString, int lineNumber) {
+        super(lineNumber)
         this.value = value
-        this.type = DirectiveType.parse(typeString)
-        this.lineNumber = lineNumber }
+        this.type = DirectiveType.parse(typeString) }
         
-    public int getLineNumber() { return lineNumber }
-
-    public String toString() { return "[Directive(${lineNumber}): ${type}, ${value}]" }
+    public String toString() { "[${lineNumber}:Directive: ${type}, ${value}]" }
 }
