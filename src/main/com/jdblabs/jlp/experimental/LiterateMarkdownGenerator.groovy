@@ -16,12 +16,28 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         super()
 
         pegdown = new PegDownProcessor(
-            Extensions.TABLES & Extensions.DEFINITIONS) }
+            Extensions.TABLES | Extensions.DEFINITIONS) }
 
     protected static Map<String, String> generateDocuments(
     Map<String, SourceFile> sources) {
         LiterateMarkdownGenerator inst = new LiterateMarkdownGenerator()
         return inst.generate(sources) }
+
+    protected void parse(Directive directive) {
+        switch(directive.type) {
+            case DirectiveType.Org:
+                def orgMap = [:]
+                orgMap.id = directive.value
+                orgMap.directive = directive
+                orgMap.sourceDocId = docState.currentDocId
+                docState.orgs[directive.value] = orgMap
+                break;
+            default:
+                break // do nothing
+            } }
+
+    protected void parse(CodeBlock codeBlock) {} // nothing to do
+    protected void parse(DocText docText) {} // nothing to do
 
     protected String emit(SourceFile sourceFile) {
         StringBuilder sb = new StringBuilder()
@@ -34,13 +50,13 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
     <head>
         <title>${docState.currentDocId}</title>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        <!-- <link rel="syltesheet" media="all" href=""/> -->
+        <link rel="stylesheet" media="all" href="docco.css"/>
     </head>
     <body>
         <div id="container">
             <table cellpadding="0" cellspacing="0">
                 <thead><tr>
-                    <th class="doc"><h1>${docState.currentDocId}</h1></th>
+                    <th class="docs"><h1>${docState.currentDocId}</h1></th>
                     <th class="code"/>
                 </tr></thead>
                 <tbody>""")
@@ -70,7 +86,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         else        { sb.append("<tr>") }
 
         // Create the `td` for the documentation.
-        sb.append('\n<td class="doc">')
+        sb.append('\n<td class="docs">')
         sb.append(emit(block.docBlock))
         sb.append('</td>')
 
@@ -94,14 +110,11 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         emitQueue = docBlock.directives.collect { directive ->
             def queueItem = [lineNumber: directive.lineNumber, value: directive]
             switch(directive.type) {
-                case DirectiveType.Api:         queueItem.priority = 12; break
+                case DirectiveType.Api:         queueItem.priority = 50; break
                 case DirectiveType.Author:      queueItem.priority = 10; break
                 case DirectiveType.Copyright:   queueItem.priority = 11; break
                 case DirectiveType.Example:     queueItem.priority = 50; break
-                case DirectiveType.Org:
-                    docState.orgs[directive.value] = directive
-                    queueItem.priority = 0
-                    break }
+                case DirectiveType.Org:         queueItem.priority =  0; break }
             
             return queueItem }
 
@@ -110,14 +123,11 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
             [lineNumber: docText.lineNumber, priority: 50, value: docText] })
                         
 
-        println emitQueue
-        println "----------"
-
         // Sort the emit queue by priority, then line number.
         emitQueue.sort(
             {i1, i2 -> i1.priority != i2.priority ?
                         i1.priority - i2.priority :
-                        i1.line - i2.line} as Comparator)
+                        i1.lineNumber - i2.lineNumber} as Comparator)
     
         // Finally, we want to treat the whole block as one markdown chunk, so
         // we will concatenate the values in the emit queue and then process
@@ -125,7 +135,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         sb = new StringBuilder()
         emitQueue.each { queueItem -> sb.append(emit(queueItem.value)) } 
 
-        return pegdown.markdownToHtml(sb.toString())
+        return processMarkdown(sb.toString())
     }
 
     protected String emit(CodeBlock codeBlock) {
@@ -153,19 +163,41 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
             // process input inside HTML elements).
             case DirectiveType.Api:
                 return "<div class='api'>" +
-                    pegdown.markdownToHtml(directive.value) + "</div>\n"
+                    processMarkdown(directive.value) + "</div>\n"
 
             // An `@author` directive is turned into a definition list.
             case DirectiveType.Author:
                 return "Author\n:   ${directive.value}\n"
 
             case DirectiveType.Copyright:
-                return "&copy; ${directive.value}\n"
+                return "\n&copy; ${directive.value}\n"
 
             // An `@example` directive is returned as is
-            case DirectiveType.Example: return directive.value
+            case DirectiveType.Example:
+                return directive.value
 
             // An `@org` directive is ignored.
             case DirectiveType.Org: return "" }
+    }
+
+    protected String processMarkdown(String markdown) {
+        // convert to HTML from Markdown
+        String html = pegdown.markdownToHtml(markdown)
+
+        // replace internal `jlp://` links with actual links based on`@org`
+        // references
+        html = html.replaceAll(/jlp:\/\/([^\s"]+)/) { wholeMatch, linkId ->
+            def link = docState.orgs[linkId]
+            String newLink
+            if (!link) {
+                /* TODO: log error */
+                newLink = "broken_link(${linkId})" }
+            else if (docState.currentDocId == link.sourceDocId) {
+                newLink = "#$linkId" }
+            else { newLink = "${link.sourceDocId}#${linkId}" }
+                
+            return newLink }
+
+        return html;
     }
 }

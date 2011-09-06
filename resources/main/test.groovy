@@ -1,4 +1,5 @@
 import com.jdblabs.jlp.*
+import com.jdblabs.jlp.experimental.LiterateMarkdownGenerator
 import org.parboiled.Parboiled
 import org.parboiled.parserunners.ReportingParseRunner
 import org.parboiled.parserunners.RecoveringParseRunner
@@ -53,4 +54,25 @@ vbsTest = {
     (new File('vbs_result.html')).withWriter { out -> out.println vbsResult }
 
     return [vbsParsed, vbsResult]
+}
+
+experimentalTest = {
+    makeExperimentalParser()
+
+    println "Parsing vbs_db_records.hrl into 'vbsResult'."
+    println "--------------------------------------------"
+
+    vbsTestFile = new File('vbs_db_records.hrl')
+    println "vbsTestFile is ${vbsTestFile.exists() ? 'present' : 'absent'}."
+    vbsTestInput = vbsTestFile.text
+
+    vbsParsed = parseRunner.run(vbsTestInput)
+
+    vbsResult = LiterateMarkdownGenerator.generateDocuments(["vbs_db_records.hrl": vbsParsed.resultValue])."vbs_db_records.hrl"
+
+    println "Writing to file 'vbs_result.html'."
+    println "----------------------------------"
+
+    (new File('vbs_result.html')).withWriter { out -> out.println vbsResult }
+
 }
