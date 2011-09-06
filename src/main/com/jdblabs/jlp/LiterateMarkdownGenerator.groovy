@@ -50,7 +50,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
     <head>
         <title>${docState.currentDocId}</title>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        <link rel="stylesheet" media="all" href="docco.css"/>
+        <link rel="stylesheet" media="all" href="jlp.css"/>
     </head>
     <body>
         <div id="container">
