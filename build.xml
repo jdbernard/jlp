@@ -5,6 +5,9 @@
     <property file="project.properties"/>
 
     <target name="release" depends="build">
+        <copy file="${build.dir}/${name}-${version}.${build.number}.jar"
+              tofile="${release.dir}/${name}-${version}.jar"/>
+        <copy file="${basedir}/jlp" todir="${release.dir}"/>
     </target>
 
 </project>
