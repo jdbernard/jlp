@@ -1,0 +1,13 @@
+Fix delimited doc block behavior.
+=================================
+
+Delimited doc blocks require that the start token be the first non-space token
+on the line it is on and that the end token be on it's own line. This is not in
+line with the general nature of delimited comment blocks, which do not place
+any restrictions on what comes before the start delimiter or after the end
+delimiter.
+
+========= ==========
+Created:  2011-09-07
+Resolved: YYYY-MM-DD
+========= ==========
