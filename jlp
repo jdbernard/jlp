@@ -1,1 +1,1 @@
-ng com.jdblabs.jlp.JLPMain "$@"
+ng com.jdblabs.jlp.JLPMain --relative-path-root "`pwd`" "$@"

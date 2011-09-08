@@ -21,6 +21,8 @@ public class JLPMain {
         cli.h('Print this help information.', longOpt: 'help', required: false)
         cli.o("Output directory (defaults to 'jlp-docs').",
             longOpt: 'output-dir', required: false)
+        cli._(longOpt: 'relative-path-root', args: 1, required: false,
+            'Resolve all relative paths against this root.')
 
         // parse options
         def opts = cli.parse(args)
@@ -30,8 +32,22 @@ public class JLPMain {
             cli.usage()
             return }
 
+        // get the relative path root (or set to current directory if not given)
+        def pathRoot = new File(opts."relative-path-root" ?: ".")
+
+        // fail if our root is non-existant
+        if (!pathRoot.exists() || !pathRoot.isDirectory()) {
+            System.err.println "'${pathRoot.path}' is not a valid directory."
+            System.exit(1) }
+
         // get the output directory and create it if necessary
         def outputDir = opts.o ? new File(opts.o) : new File("jlp-docs")
+
+        // resolve the output directory against our relative root
+        if (!outputDir.isAbsolute()) {
+            outputDir = new File(pathRoot, outputDir.path) }
+
+        // create the output directory if it does not exist
         if (!outputDir.exists()) outputDir.mkdirs()
 
         // get the CSS theme to use
@@ -41,24 +57,39 @@ public class JLPMain {
         // get files passed in
         def filenames = opts.getArgs()
         
-        // -------- parse input -------- //
+        // parse input
         Map parsedFiles = filenames.inject([:]) { acc, filename ->
-            acc[filename] = inst.parse(new File(filename))
+
+            // create the File object
+            File file = new File(filename)
+
+            // if this is a relative path, resolve it against our root path
+            if (!file.isAbsolute()) { file = new File(pathRoot, filename) }
+
+            // parse the file, store the result
+            acc[filename] = inst.parse(file)
             return acc }
 
-        // -------- generate output -------- //
+        // generate output
         Map htmlDocs = LiterateMarkdownGenerator.generateDocuments(parsedFiles)
 
-        // -------- write output files ------- //
+        // write output files
         htmlDocs.each { filename, html ->
+
             // split the path into parts
             def fileParts = filename.split(/[\.\/]/)
 
-            File subDir = new File('.')
+            // default the subdirectory to the output directory
+            File subDir = outputDir
 
+            // if the input file was in a subdirectory, we want to mirror that
+            // structure here.
             if (fileParts.length > 2) {
+
                 // find the relative subdirectory of this file
                 subDir = new File(outputDir, fileParts[0..-3].join('/'))
+
+                // create that directory if needed
                 if (!subDir.exists()) subDir.mkdirs()
             }
 
