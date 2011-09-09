@@ -12,25 +12,21 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
     protected PegDownProcessor pegdown
 
-    protected LiterateMarkdownGenerator() {
-        super()
+    public LiterateMarkdownGenerator(Processor processor) {
+        super(processor)
 
         pegdown = new PegDownProcessor(
             Extensions.TABLES | Extensions.DEFINITIONS) }
 
-    protected static Map<String, String> generateDocuments(
-    Map<String, SourceFile> sources) {
-        LiterateMarkdownGenerator inst = new LiterateMarkdownGenerator()
-        return inst.generate(sources) }
-
     protected void parse(Directive directive) {
         switch(directive.type) {
             case DirectiveType.Org:
-                def orgMap = [:]
-                orgMap.id = directive.value
-                orgMap.directive = directive
-                orgMap.sourceDocId = docState.currentDocId
-                docState.orgs[directive.value] = orgMap
+                LinkAnchor anchor = new LinkAnchor(
+                    id: directive.value,
+                    directive: directive,
+                    sourceDocId: processor.currentDocId)
+
+                processor.linkAnchors[anchor.id] = anchor
                 break;
             default:
                 break // do nothing
@@ -48,7 +44,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 """<!DOCTYPE html>
 <html>
     <head>
-        <title>${docState.currentDocId}</title>
+        <title>${processor.currentDocId}</title>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         <link rel="stylesheet" media="all" href="jlp.css"/>
     </head>
@@ -56,7 +52,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         <div id="container">
             <table cellpadding="0" cellspacing="0">
                 <thead><tr>
-                    <th class="docs"><h1>${docState.currentDocId}</h1></th>
+                    <th class="docs"><h1>${processor.currentDocId}</h1></th>
                     <th class="code"/>
                 </tr></thead>
                 <tbody>""")
@@ -187,14 +183,33 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         // replace internal `jlp://` links with actual links based on`@org`
         // references
         html = html.replaceAll(/jlp:\/\/([^\s"]+)/) { wholeMatch, linkId ->
-            def link = docState.orgs[linkId]
+
+            // Get the org data stored for this org id.
+            def link = processor.linkAnchors[linkId]
             String newLink
+
             if (!link) {
+                // We do not have any reference to this id.
                 /* TODO: log error */
                 newLink = "broken_link(${linkId})" }
-            else if (docState.currentDocId == link.sourceDocId) {
+
+            // This link points to a location in this document.
+            else if (processor.currentDocId == link.sourceDocId) {
                 newLink = "#$linkId" }
-            else { newLink = "${link.sourceDocId}#${linkId}" }
+
+            // The link should point to a different document.
+            else {
+                thisDoc = processor.currentDoc
+                linkDoc = processor.docs[link.sourceDocId]
+
+                pathToLinkedDoc = processor.getRelativePath(
+                    thisDoc.sourceFile.parentFile,
+                    thatDoc.sourceFile)
+
+                // The target document may not be in the same directory
+                // as us, backtrack to the (relative) top of our directory
+                // structure.
+                newLink = pathToLinkedDoc + "/" + ".html#${linkId}" }
                 
             return newLink }
 

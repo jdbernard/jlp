@@ -1,0 +1,25 @@
+Internal links are not smart enough about cross-file linking.
+=============================================================
+
+There are two main problems with internal linking as it works now:
+
+1. The links are resolved relative to the directory of the file being processed
+   when they should be resolved relative to the root output directory.
+   
+   For example, consider ``@org id1`` defined in ``dir/file1.src``, then
+   referenced in ``dir/file2.src`` in this manner: ``[link](jlp://id1``. The
+   url written in ``dir/file2.html`` is ``dir/file1.html#id1``. However, when
+   the page is viewed, this url is interpreted relative to the directory of the
+   current page. So if the docs live at ``file:///docs`` then the url will
+   resolve to ``file:///docs/dir/dir/file1.src#id1`` instead of
+   ``file:///docs/dir/file1.html#id1``.
+
+2. The links do substitute the ``html`` suffix to the file names in place of the
+   files' suffixes. In the above example note that the actual urls end in
+   ``.src`` like the original input files, but the expected url ends in
+   ``.html``.
+
+========= ==========
+Created:  2011-09-08
+Resolved: 2011-09-09
+========= ==========

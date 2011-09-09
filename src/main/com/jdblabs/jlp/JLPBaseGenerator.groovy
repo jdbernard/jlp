@@ -6,36 +6,18 @@ import java.util.Map
 
 public abstract class JLPBaseGenerator {
 
-    protected Map docState
+    protected Processor processor
 
-    protected JLPBaseGenerator() {
-        docState = [orgs:           [:],        // stores `@org` references
-                    codeTrees:      [:],        // stores code ASTs for
-                    currentDocId:   false ] }   // store the current docid
+    protected JLPBaseGenerator(Processor processor) {
+        this.processor = processor }
 
-    protected Map<String, String> generate(Map<String, SourceFile> sources) {
-        Map result = [:]
+    protected String generate(SourceFile source) {
 
         // run the parse phase
-        sources.each { sourceId, sourceAST ->
-
-            // set up the current generator state for this source
-            docState.currentDocId = sourceId
-            docState.codeTrees[sourceId] = sourceAST.codeAST
-
-            parse(sourceAST) }
+        parse(source)
 
         // run the emit phase
-        sources.each { sourceId, sourceAST ->
-
-            // set up the current generator state for this source
-            docState.currentDocId = sourceId
-
-            // generate the doc for this source
-            result[sourceId] = emit(sourceAST) }
-
-        // return our results
-        return result }
+        return emit(source) }
 
     protected void parse(SourceFile sourceFile) {
         sourceFile.blocks.each { block -> parse(block) } }
