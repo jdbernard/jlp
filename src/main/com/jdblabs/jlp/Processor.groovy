@@ -66,13 +66,22 @@ public class Processor {
             currentDoc.sourceAST = parseRunner.run(
                 currentDoc.sourceFile.text).resultValue }
 
-        // generate output
+        // run our generator parse phase (first pass over the ASTs)
         processDocs {
 
             // TODO: add logic to configure or autodetect the correct generator
             // for each file
             def generator = getGenerator(LiterateMarkdownGenerator)
-            currentDoc.output = generator.generate(currentDoc.sourceAST) }
+            generator.parse(currentDoc.sourceAST) }
+
+
+        // Second pass by the generators, create output.
+        processDocs {
+            
+            // TODO: add logic to configure or autodetect the correct generator
+            // for each file
+            def generator = getGenerator(LiterateMarkdownGenerator)
+            currentDoc.output = generator.emit(currentDoc.sourceAST) }
 
         // Write the output to the output directory
         processDocs {

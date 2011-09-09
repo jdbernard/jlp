@@ -11,14 +11,6 @@ public abstract class JLPBaseGenerator {
     protected JLPBaseGenerator(Processor processor) {
         this.processor = processor }
 
-    protected String generate(SourceFile source) {
-
-        // run the parse phase
-        parse(source)
-
-        // run the emit phase
-        return emit(source) }
-
     protected void parse(SourceFile sourceFile) {
         sourceFile.blocks.each { block -> parse(block) } }
 

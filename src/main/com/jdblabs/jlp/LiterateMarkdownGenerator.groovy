@@ -199,17 +199,17 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
             // The link should point to a different document.
             else {
-                thisDoc = processor.currentDoc
-                linkDoc = processor.docs[link.sourceDocId]
+                TargetDoc thisDoc = processor.currentDoc
+                TargetDoc linkDoc = processor.docs[link.sourceDocId]
 
-                pathToLinkedDoc = processor.getRelativePath(
+                String pathToLinkedDoc = processor.getRelativeFilepath(
                     thisDoc.sourceFile.parentFile,
-                    thatDoc.sourceFile)
+                    linkDoc.sourceFile)
 
                 // The target document may not be in the same directory
                 // as us, backtrack to the (relative) top of our directory
                 // structure.
-                newLink = pathToLinkedDoc + "/" + ".html#${linkId}" }
+                newLink = pathToLinkedDoc + ".html#${linkId}" }
                 
             return newLink }
 
