@@ -42,7 +42,7 @@ td.docs, th.docs {
     margin: 15px 0 15px;
     padding-left: 15px; }
 
-.docs p tt, .docs p code {
+.docs tt, .docs code {
     background: #f8f8ff;
     border: 1px solid #dedede;
     font-size: 12px;
