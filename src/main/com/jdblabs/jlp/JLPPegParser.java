@@ -8,9 +8,10 @@ import org.parboiled.BaseParser;
 import org.parboiled.Context;
 import org.parboiled.Rule;
 import org.parboiled.annotations.*;
+import org.parboiled.parserunners.ReportingParseRunner;
 
 @BuildParseTree
-public class JLPPegParser extends BaseParser<Object> {
+public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     int curLineNum = 1;
 
@@ -30,6 +31,10 @@ public class JLPPegParser extends BaseParser<Object> {
 
     public JLPPegParser() {
         this("/**", "*/", "!#$%^&*()_-=+|;:'\",<>?~`", "///"); }
+
+    public SourceFile parse(String input) {
+        ReportingParseRunner rpr = new ReportingParseRunner(this.SourceFile());
+        return (SourceFile) rpr.run(input).resultValue; }
 
     /**
      * Parses the rule:

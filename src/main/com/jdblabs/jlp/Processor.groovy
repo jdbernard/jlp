@@ -2,7 +2,6 @@ package com.jdblabs.jlp
 
 import org.parboiled.BaseParser
 import org.parboiled.Parboiled
-import org.parboiled.parserunners.ReportingParseRunner
 
 /**
  * Processor processes one batch of input files to create a set of output files.
@@ -22,7 +21,7 @@ public class Processor {
     // shortcut for docs[currentDocId]
     public TargetDoc currentDoc
 
-    protected Map<String, BaseParser> parsers = [:]
+    protected Map<String, JLPParser> parsers = [:]
     protected Map<String, JLPBaseGenerator> generators = [:]
 
     public static void process(File outputDir, String css,
@@ -61,11 +60,9 @@ public class Processor {
             // TODO: add logic to configure or autodetect the correct parser for
             // each file
             def parser = getParser(sourceTypeForFile(currentDoc.sourceFile))
-            def parseRunner = new ReportingParseRunner(parser.SourceFile())
 
             // TODO: error detection
-            currentDoc.sourceAST = parseRunner.run(
-                currentDoc.sourceFile.text).resultValue }
+            currentDoc.sourceAST = parser.parse(currentDoc.sourceFile.text) }
 
         // run our generator parse phase (first pass over the ASTs)
         processDocs {
@@ -175,6 +172,7 @@ public class Processor {
             case 'groovy': return 'groovy';
             case 'java': return 'java';
             case 'js': return 'javascript';
+            case 'md': return 'markdown';
             default: return 'unknown'; }}
 
     protected getGenerator(String sourceType) {
@@ -187,13 +185,14 @@ public class Processor {
         return generators[sourceType] }
 
     protected getParser(String sourceType) {
-        println "Looking for a ${sourceType} parser."
         if (parsers[sourceType] == null) {
             switch(sourceType) {
                 case 'erlang':
                     parsers[sourceType] = Parboiled.createParser(
                         JLPPegParser, '%%')
-                    println "Built an erlang parser."
+                    break
+                case 'markdown':
+                    parsers[sourceType] = new MarkdownParser()
                     break
                 case 'c':
                 case 'c++':
@@ -203,7 +202,6 @@ public class Processor {
                 default:
                     parsers[sourceType] = Parboiled.createParser(JLPPegParser,
                         '/**', '*/', '!#$%^&*()_-=+|;:\'",<>?~`', '///')
-                    println "Built a java parser."
                     break }}
 
         return parsers[sourceType] }

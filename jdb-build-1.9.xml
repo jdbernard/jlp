@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<project name="Jonathan Bernard Build Common">
+<project name="Jonathan Bernard Build Common"
+    xmlns:ivy="antlib:org.apache.ivy.ant">
 
     <property environment="env"/>
 
@@ -16,6 +17,7 @@
         <property name="build.dir" value="${basedir}/build"/>
         <property name="lib.dir" value="${basedir}/lib"/>
         <property name="resources.dir" value="${basedir}/resources"/>
+        <property name="splash.image" value="splash.png"/>
 
         <!--======== PATHS ========-->
         <path id="groovy.classpath">
@@ -59,9 +61,25 @@
     </target>
 
     <!--======== LIBRARY TARGETS ========-->
-    <target name="lib" depends="-lib-local,-lib-ivy"/>
+    <target name="-lib" depends="-lib-local,-lib-ivy,lib"/>
+    
+    <target name="lib"/>
 
-    <target name="-lib-ivy" unless="${lib.local}"/>
+    <target name="-init-ivy">
+        <ivy:settings id="ivy.settings" file="ivysettings.xml"/>
+    </target>
+
+    <target name="-lib-ivy" depends="-init-ivy" unless="${lib.local}">
+        <ivy:retrieve settingsRef="ivy.settings"
+            pattern="${lib.dir}/[conf]/[type]/[artifact]-[revision].[ext]"
+            conf="compile,runtime"/>
+    </target>
+
+    <target name="-lib-groovy" if="${lib.local}">
+        <copy todir="${build.dir}/lib/runtime/jar">
+            <fileset dir="${env.GROOVY_HOME}/embeddable"/>
+        </copy>
+    </target>
 
     <target name="-lib-local" if="${lib.local}">
         <echo message="Resolving libraries locally."/>
@@ -96,7 +114,7 @@
     </target>
 
     <!--======== COMPILATION TARGETS ========-->
-    <target name="-compile-groovy" depends="-init,-init-groovy,lib">
+    <target name="-compile-groovy" depends="-init,-init-groovy,-lib,-lib-groovy">
         <mkdir dir="${build.dir}/main/classes"/>
         <groovyc srcdir="${src.dir}/main" destdir="${build.dir}/main/classes"
             includeAntRuntime="false">
@@ -109,7 +127,7 @@
         </groovyc>
     </target>
 
-    <target name="-compile-java" depends="-init,lib">
+    <target name="-compile-java" depends="-init,-lib">
         <mkdir dir="${build.dir}/main/classes"/>
         <javac srcdir="${src.dir}/main" destdir="${build.dir}/main/classes"
             includeAntRuntime="false" classpathref="compile-libs"/>
@@ -178,12 +196,41 @@
     </target>
 
     <!--======== BUILD TARGETS ========-->
-    <target name="-build-modular"
+    <target name="-build-modular-lib" unless="executable.jar"
         depends="compile,increment-build-number,resources">
 
         <jar destfile="${build.dir}/${name}-${version}.${build.number}.jar"
             basedir="${build.dir}/main/classes"/>
     </target>
+
+    <target name="-build-modular-executable" if="executable.jar"
+        depends="compile,increment-build-number,resources">
+
+        <pathconvert property="jar.classpath" pathsep=" " refid="runtime-libs">
+            <mapper>
+                <chainedmapper>
+                    <!-- remove absolute path -->
+                    <flattenmapper />
+
+                    <!-- add lib/ prefix -->
+                    <globmapper from="*" to="lib/*" />
+                </chainedmapper>
+            </mapper>
+        </pathconvert>
+
+        <jar destfile="${build.dir}/${name}-${version}.${build.number}.jar"
+            basedir="${build.dir}/main/classes">
+
+            <manifest>
+                <attribute name="Main-Class" value="${main.class}"/>
+                <attribute name="Class-Path" value="${jar.classpath}"/>
+                <attribute name="SplashScreen-Image" value="${splash.image}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="-build-modular"
+        depends="-build-modular-lib,-build-modular-executable"/>
 
     <target name="-build-packed-libs"
         depends="compile,increment-build-number,resources">

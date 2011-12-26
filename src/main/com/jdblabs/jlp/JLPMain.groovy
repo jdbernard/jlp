@@ -73,19 +73,27 @@ public class JLPMain {
 
         // get files passed in
         def filenames = opts.getArgs()
-        def inputFiles = (filenames.collect { filename ->
+        def inputFiles = []
+
+        filenames.each { filename ->
             // create a File object
-            File file = new File(filename) 
-            
+            File file = new File(filename)
+
             // if this is a relative path, resolve it against our path root
             if (!file.isAbsolute()) { file = new File(pathRoot, filename) } 
-            
-            // warn the user about files that do not exist
-            if (!file.exists())  {
-                System.err.println
-                    "'${file.canonicalPath}' does not exist: ignored." }
 
-            return file }).findAll { it.exists() }
+            // if this file does not exist, warn the user and skip it
+            if (!file.exists()) {
+                System.err.println(
+                    "'${file.canonicalPath}' does not exist: ignored.")
+                return }
+                
+            // if this file is a directory, add all the files in it (recurse
+            // into sub-directories and add their contents as well).
+            if (file.isDirectory()) { file.eachFileRecurse {
+                if (it.isFile()) { inputFiles << it }}}
+
+            else { inputFiles << file } }
 
         Processor.process(outputDir, css, inputFiles)
     }
