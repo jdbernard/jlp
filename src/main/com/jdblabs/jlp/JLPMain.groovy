@@ -18,6 +18,8 @@ public class JLPMain {
         cli.o("Output directory (defaults to 'jlp-docs').",
             longOpt: 'output-dir', args: 1, argName: "output-dir",
             required: false)
+        cli._('Use <css-file> for the documentation css.',
+            longOpt: 'css-file', args: 1, required: false, argName: 'css-file')
         cli._(longOpt: 'relative-path-root', args: 1, required: false,
             'Resolve all relative paths against this root.')
 
@@ -47,8 +49,26 @@ public class JLPMain {
         // create the output directory if it does not exist
         if (!outputDir.exists()) outputDir.mkdirs()
 
-        // get the CSS theme to use
-        def css = JLPMain.class.getResourceAsStream("/jlp.css") // TODO: make an option
+        // get the CSS theme to use. We will start by assuming the default will
+        // be used.
+        def css = JLPMain.class.getResourceAsStream("/jlp.css")
+
+        // If the CSS file was specified on the command-line, let's look for it.
+        if (opts.'css-file') {
+            def cssFile = new File(opts.'css-file')
+            // resolve against our relative root
+            if (!cssFile.isAbsolute()) {
+                cssFile = new File(pathRoot, cssFile.path) }
+                
+            // Finally, make sure the file actually exists.
+            if (cssFile.exists()) { css = cssFile }
+            else {
+                println "WARN: Could not fine the custom CSS file: '" +
+                    "${cssFile.canonicalPath}'."
+                println "      Using the default CSS." }}
+
+        // Extract the text from our css source (either an InputStream or a
+        // File)
         css = css.text
 
         // get files passed in

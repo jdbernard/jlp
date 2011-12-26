@@ -5,25 +5,53 @@ Block ->
     DocBlock CodeBlock
 
 DocBlock ->
-    (Directive / DocText)+
+    (SDocBlock / MDocBlock)
 
-Directive ->
-    DocLineStart AT (LongDirective / ShortDirective)
+SDocBlock ->
+    (SDirective / SDocText)+
 
-LongDirective ->
-    ("author" / "doc" / "example") RemainingLine DocText?
-
-ShortDirective ->
-    ("org" / "copyright") RemainingLine
-
-DocText ->
-    (DocLineStart !AT RemainingLine)+
-
-DocLineStart ->
-    Space* DOC_LINE_START Space?
+MDocBlock ->
+    MDOC_START (!MDOC_END / MDirective / MDocText)* MDOC_END
 
 CodeBlock ->
-    (!DocLineStart RemainingLine)+
+    (RemainingCodeLine)+
 
-RemainingLine ->
-   ((!EOL)* EOL) / ((!EOL)+ EOI)
+SDirective ->
+    SDocLineStart AT (SLongDirective / SShortDirective)
+
+MDirective ->
+    MDocLineStart? AT (MLongDirective / MShortDirective)
+
+SLongDirective ->
+    ("api" / "example") RemainingSDocLine SDocText?
+
+MLongDirective ->
+    ("api" / "example") RemainingMDocLine MDocText?
+
+SShortDirective ->
+    ("author" / "org" / "copyright") RemainingSDocLine
+
+MShortDirective ->
+    ("author" / "org" / "copyright") RemainingMDocLine
+
+SDocText ->
+    (SDocLineStart !AT RemainingSDocLine)+
+
+MDocText ->
+    (MDocLineStart? !AT RemainingMDocLine)+
+
+SDocLineStart ->
+    SPACE* SDOC_START SPACE?
+
+MDocLineStart ->
+    SPACE* !MDOC_END MDOC_LINE_START SPACE?
+
+RemainingSDocLine ->
+    ((!EOL)* EOL) / ((!EOL)+ EOI)
+
+RemainingMDocLine ->
+    ((!(EOL / MDOC_END))* EOL) / ((!MDOC_END)+)
+
+RemainingCodeLine ->
+    ((!(EOL / MDOC_START / SDocLineStart))* EOL) /
+    (!(MDOC_START / SDocLineStart))+

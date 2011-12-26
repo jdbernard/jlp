@@ -14,6 +14,23 @@ public class JLPPegParser extends BaseParser<Object> {
 
     int curLineNum = 1;
 
+    public JLPPegParser(String mdocStart, String mdocEnd,
+        String mdocLineStart, String sdocStart) {
+
+        MDOC_START = String(mdocStart).label("MDOC_START");
+        MDOC_END = String(mdocEnd).label("MDOC_END");
+        SDOC_START = String(sdocStart).label("SDOC_START");
+        MDOC_LINE_START = AnyOf(mdocLineStart).label("MDOC_LINE_START"); }
+
+    public JLPPegParser(String sdocStart) {
+        MDOC_START = NOTHING;
+        MDOC_LINE_START = NOTHING;
+        MDOC_END = NOTHING;
+        SDOC_START = String(sdocStart).label("SDOC_START"); }
+
+    public JLPPegParser() {
+        this("/**", "*/", "!#$%^&*()_-=+|;:'\",<>?~`", "///"); }
+
     /**
      * Parses the rule:
      *  SourceFile = (Block / DocBlock / CodeBlock)+
@@ -95,60 +112,99 @@ public class JLPPegParser extends BaseParser<Object> {
             push(curLineNum),
             DocBlock(), CodeBlock(),
 
+            // A DocBlock and a CodeBlock are pushed onto the stack by the
+            // above rules. Pop them off, along with the line number we pushed
+            // before that, and create a new Block node.
             push(new Block((CodeBlock) pop(), (DocBlock) pop(), popAsInt()))); }
 
     /**
      * Parses the rule:
-     *  DocBlock = (Directive / DocText)+
+     *   DocBlock = SDocBlock / MDocBlock
+     *
+     * Pushes a DocBlock onto the stack.
+     */
+    Rule DocBlock() { return FirstOf(SDocBlock(), MDocBlock()); }
+
+    /**
+     * Parses the rule:
+     *  SDocBlock = (SDirective / SDocText)+
      *
      * Pushes a DocBlock object onto the stack
      */
-    Rule DocBlock() {
+    Rule SDocBlock() {
         return Sequence(
             push(new DocBlock(curLineNum)),
             OneOrMore(Sequence(
-                FirstOf(Directive(), DocText()),
+                FirstOf(SDirective(), SDocText()),
                 addToDocBlock((ASTNode) pop())))); }
 
     /**
      * Parses the rule:
-     *  CodeBlock = (!DocLineStart RemainingLine)+
+     *  MDocBlock = MDOC_START (MDirective / MDocText)+ MDOC_END
+     *
+     * Pushes a DocBlock object onto the stack
+     */
+    Rule MDocBlock() {
+        return Sequence(
+            push(new DocBlock(curLineNum)),
+            MDOC_START,
+            ZeroOrMore(Sequence(
+                // We need to be careful to exclude MDOC_END here, as there can
+                // be some confusion otherwise between the start of a line with
+                // MDOC_LINE_START and MDOC_END depending on what values the
+                // user has chosen for them
+                TestNot(MDOC_END), FirstOf(MDirective(), MDocText()),
+                addToDocBlock((ASTNode) pop()))),
+            MDOC_END); }
+    /**
+     * Parses the rule:
+     *  CodeBlock = (RemainingCodeLine)+
      *
      * Pushes a CodeBlock onto the stack.
      */
     Rule CodeBlock() {
         return Sequence(
             push(new CodeBlock(curLineNum)),
-            OneOrMore(Sequence(
-                TestNot(DocLineStart()), RemainingLine(),
+            OneOrMore(Sequence(RemainingCodeLine(),
                 addToCodeBlock(match())))); }
 
     /**
      * Parses the rule:
-     *  Directive = DocLineStart AT (LongDirective / ShortDirective)
+     *  SDirective = SDocLineStart AT (SLongDirective / SShortDirective)
      *
      * Pushes a Directive node on the stack.
      */
-    Rule Directive() {
+    Rule SDirective() {
         return Sequence(
-            DocLineStart(), AT, FirstOf(LongDirective(), ShortDirective())); }
+            SDocLineStart(), AT, FirstOf(SLongDirective(), SShortDirective())); }
 
     /**
      * Parses the rule:
-     *  LongDirective =
-     *      (API_DIR / EXAMPLE_DIR) RemainingLine DocText?
+     *  MDirective = MDocLineStart? AT (MLongDirective / MShortDirective)
      *
      * Pushes a Directive node onto the stack.
      */
-    Rule LongDirective() {
+    Rule MDirective() {
+        return Sequence(
+            Optional(MDocLineStart()),
+            AT, FirstOf(MLongDirective(), MShortDirective())); }
+
+    /**
+     * Parses the rule:
+     *  SLongDirective =
+     *      (API_DIR / EXAMPLE_DIR) RemainingSDocLine SDocText?
+     *
+     * Pushes a Directive node onto the stack.
+     */
+    Rule SLongDirective() {
         return Sequence(
             push(curLineNum),
 
             FirstOf(API_DIR, EXAMPLE_DIR),  push(match()),
-            RemainingLine(),                            push(match()),
+            RemainingSDocLine(),            push(match()),
 
             Optional(Sequence(
-                DocText(),
+                SDocText(),
                 swap(),
                 push(popAsString() + ((DocText) pop()).value))),
                 
@@ -156,48 +212,151 @@ public class JLPPegParser extends BaseParser<Object> {
 
     /**
      * Parses the rule:
-     *  ShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingLine
+     *  MLongDirective = 
+     *      (API_DIR / EXAMPLE_DIR) RemainingMDocLine MDocText?
      *
      * Pushes a Directive node onto the stack.
      */
-    Rule ShortDirective() {
+    Rule MLongDirective() {
+        return Sequence(
+            push(curLineNum),
+
+            FirstOf(API_DIR, EXAMPLE_DIR), push(match()),
+            RemainingMDocLine(),           push(match()),
+
+            Optional(Sequence(
+                MDocText(),
+                swap(),
+                push(popAsString() + ((DocText) pop()).value))),
+
+            push(new Directive(popAsString(), popAsString(), popAsInt()))); }
+
+    /**
+     * Parses the rule:
+     *  SShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingSDocLine
+     *
+     * Pushes a Directive node onto the stack.
+     */
+    Rule SShortDirective() {
         return Sequence(
             push(curLineNum),
             FirstOf(AUTHOR_DIR, ORG_DIR, COPYRIGHT_DIR), push(match()),
-            RemainingLine(),
+            RemainingSDocLine(),
             
             push(new Directive(match().trim(), popAsString(), popAsInt()))); }
 
     /**
      * Parses the rule:
-     *  DocText = (DocLineStart !AT RemainingLine)+
+     *  MShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingMDocLine
+     *
+     * Pushes a Directive node onto the stack.
+     */
+    Rule MShortDirective() {
+        return Sequence(
+            push(curLineNum),
+            FirstOf(AUTHOR_DIR, ORG_DIR, COPYRIGHT_DIR), push(match()),
+            RemainingMDocLine(),
+
+            push(new Directive(match().trim(), popAsString(), popAsInt()))); }
+
+    /**
+     * Parses the rule:
+     *  SDocText = (SDocLineStart !AT RemainingSDocLine)+
      *
      * Pushes a DocText node onto the stack.
      */
-    Rule DocText() {
+    Rule SDocText() {
         return Sequence(
             push(new DocText(curLineNum)),
             OneOrMore(Sequence(
-                DocLineStart(), TestNot(AT), RemainingLine(),
+                SDocLineStart(), TestNot(AT), RemainingSDocLine(),
                 addToDocText(match())))); }
 
-    Rule DocLineStart() {
+    /**
+     * Parses the rule:
+     *  MDocText = (MDocLineStart? !AT RemainingMDocLine)+
+     *
+     * Pushes a DocText node onto the stack.
+     */
+    Rule MDocText() {
         return Sequence(
-            ZeroOrMore(SPACE), DOC_LINE_START, Optional(SPACE)); }
+            push(new DocText(curLineNum)),
+            OneOrMore(Sequence(
+                Optional(MDocLineStart()),
+                TestNot(AT), RemainingMDocLine(),
+                addToDocText(match())))); }
 
-    Rule NonEmptyLine() {
-        return Sequence(OneOrMore(NOT_EOL), FirstOf(EOL, EOI)); }
+    /**
+     * Parses the rule:
+     *  SDocLineStart = SPACE* SDOC_START SPACE?
+     */
+    Rule SDocLineStart() {
+        return Sequence(
+            ZeroOrMore(SPACE), SDOC_START, Optional(SPACE)); }
 
-    Rule RemainingLine() {
+    /**
+     * Parses the rule:
+     *  MDocLineStart = SPACE* !MDOC_END MDOC_LINE_START SPACE?
+     */
+    Rule MDocLineStart() {
+        return Sequence(
+            ZeroOrMore(SPACE), TestNot(MDOC_END), MDOC_LINE_START, Optional(SPACE)); }
+
+    /**
+     * Parses the rule:
+     *  RemainingSDocLine = ((!EOL)* EOL) / ((!EOL)+ EOI)
+     */
+    Rule RemainingSDocLine() {
         return FirstOf(
             Sequence(ZeroOrMore(NOT_EOL), EOL, incLineCount()),
             Sequence(OneOrMore(NOT_EOL), EOI, incLineCount())); }
+
+    /**
+     * Parses the rule:
+     *  RemainingMDocLine = 
+     *      ((!(EOL / MDOC_END))* EOL) /
+     *      ((!MDOC_END)+)
+     */
+    Rule RemainingMDocLine() {
+        return FirstOf(
+            // End of line, still within the an M-style comment block
+            Sequence(
+                ZeroOrMore(Sequence(TestNot(FirstOf(EOL, MDOC_END)), ANY)),
+                EOL,
+                incLineCount()),
+
+            // End of M-style comment block
+            OneOrMore(Sequence(TestNot(MDOC_END), ANY))); }
+
+    /**
+     * Parses the rule:
+     *  RemainingCodeLine = 
+     *      ((!(EOL / MDOC_START / SDocLineStart))* EOL) /
+     *      (!(MDOC_START / SDocLineStart))+
+     */
+    Rule RemainingCodeLine() {
+        return FirstOf(
+            // End of line, still within the code block.
+            Sequence(
+                ZeroOrMore(Sequence(
+                    TestNot(FirstOf(EOL, MDOC_START, SDocLineStart())),
+                    ANY)),
+                EOL,
+                incLineCount()),
+
+            // Found an MDOC_START or SDocLineStart
+            OneOrMore(Sequence(TestNot(FirstOf(MDOC_START, SDocLineStart())), ANY))); }
 
     Rule AT         = Ch('@').label("AT");
     Rule EOL        = FirstOf(String("\r\n"), Ch('\n'), Ch('\r')).label("EOL");
     Rule NOT_EOL    = Sequence(TestNot(EOL), ANY).label("NOT_EOL");
     Rule SPACE      = AnyOf(" \t").label("SPACE");
-    Rule DOC_LINE_START = String("%%").label("DOC_LINE_START");
+
+    // Configurable
+    Rule MDOC_START;
+    Rule MDOC_END;
+    Rule MDOC_LINE_START;
+    Rule SDOC_START;
 
     // directive terminals
     Rule AUTHOR_DIR     = IgnoreCase("author");

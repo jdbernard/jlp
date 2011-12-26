@@ -22,8 +22,8 @@ public class Processor {
     // shortcut for docs[currentDocId]
     public TargetDoc currentDoc
 
-    protected Map<Class, BaseParser> parsers = [:]
-    protected Map<Class, JLPBaseGenerator> generators = [:]
+    protected Map<String, BaseParser> parsers = [:]
+    protected Map<String, JLPBaseGenerator> generators = [:]
 
     public static void process(File outputDir, String css,
     List<File> inputFiles) {
@@ -60,9 +60,10 @@ public class Processor {
             
             // TODO: add logic to configure or autodetect the correct parser for
             // each file
-            def parser = getParser(JLPPegParser)
+            def parser = getParser(sourceTypeForFile(currentDoc.sourceFile))
             def parseRunner = new ReportingParseRunner(parser.SourceFile())
 
+            // TODO: error detection
             currentDoc.sourceAST = parseRunner.run(
                 currentDoc.sourceFile.text).resultValue }
 
@@ -71,7 +72,8 @@ public class Processor {
 
             // TODO: add logic to configure or autodetect the correct generator
             // for each file
-            def generator = getGenerator(LiterateMarkdownGenerator)
+            def generator =
+                getGenerator(sourceTypeForFile(currentDoc.sourceFile))
             generator.parse(currentDoc.sourceAST) }
 
 
@@ -80,7 +82,8 @@ public class Processor {
             
             // TODO: add logic to configure or autodetect the correct generator
             // for each file
-            def generator = getGenerator(LiterateMarkdownGenerator)
+            def generator =
+                getGenerator(sourceTypeForFile(currentDoc.sourceFile))
             currentDoc.output = generator.emit(currentDoc.sourceAST) }
 
         // Write the output to the output directory
@@ -94,8 +97,7 @@ public class Processor {
             File outputDir = outputFile.parentFile
 
             // create the directory if need be
-            if (!outputDir.exists()) {
-                outputDir.mkdirs() }
+            if (!outputDir.exists()) { outputDir.mkdirs() }
 
             // write the css file if it does not exist
             File cssFile = new File(outputDir, "jlp.css")
@@ -159,17 +161,50 @@ public class Processor {
 
             return new File(newPath.join('/')) }
 
-    protected getGenerator(Class generatorClass) {
-        if (generators[generatorClass] == null) {
-            def constructor = generatorClass.getConstructor(Processor)
-            generators[generatorClass] = constructor.newInstance(this)
-        }
+    public static sourceTypeForFile(File sourceFile) {
+        String extension
+        def nameParts = sourceFile.name.split(/\./)
 
-        return generators[generatorClass] }
+        if (nameParts.length == 1) { return 'binary' }
+        else { extension = nameParts[-1] }
 
-    protected getParser(Class parserClass) {
-        if (parsers[parserClass] == null) {
-            parsers[parserClass] = Parboiled.createParser(parserClass) }
+        switch (extension) {
+            case 'c': case 'h': return 'c';
+            case 'c++': case 'h++': case 'cpp': case 'hpp': return 'c++';
+            case 'erl': case 'hrl': return 'erlang';
+            case 'groovy': return 'groovy';
+            case 'java': return 'java';
+            case 'js': return 'javascript';
+            default: return 'unknown'; }}
 
-        return parsers[parserClass] }
+    protected getGenerator(String sourceType) {
+        if (generators[sourceType] == null) {
+            switch(sourceType) {
+                default:
+                    generators[sourceType] =
+                        new LiterateMarkdownGenerator(this) }}
+
+        return generators[sourceType] }
+
+    protected getParser(String sourceType) {
+        println "Looking for a ${sourceType} parser."
+        if (parsers[sourceType] == null) {
+            switch(sourceType) {
+                case 'erlang':
+                    parsers[sourceType] = Parboiled.createParser(
+                        JLPPegParser, '%%')
+                    println "Built an erlang parser."
+                    break
+                case 'c':
+                case 'c++':
+                case 'groovy':
+                case 'java':
+                case 'javascript':
+                default:
+                    parsers[sourceType] = Parboiled.createParser(JLPPegParser,
+                        '/**', '*/', '!#$%^&*()_-=+|;:\'",<>?~`', '///')
+                    println "Built a java parser."
+                    break }}
+
+        return parsers[sourceType] }
 }

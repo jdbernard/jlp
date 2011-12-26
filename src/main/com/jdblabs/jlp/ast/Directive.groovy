@@ -3,11 +3,7 @@ package com.jdblabs.jlp.ast
 public class Directive extends ASTNode {
 
     public static enum DirectiveType {
-        Api,
-        Author,
-        Copyright,
-        Example,
-        Org;
+        Api, Author, Copyright, Example, Org;
         
         public static DirectiveType parse(String typeString) {
             valueOf(typeString.toLowerCase().capitalize()) } }
