@@ -1,0 +1,12 @@
+Encode Documentation and Code Characters for HTML
+=================================================
+
+The text of the documentation and the code is not being HTML encoded,
+so some characters (most notably `<`) are causing wierd display issues
+in the resulting output.
+
+----
+
+======== ===================
+Created: 2011-12-26T00:43:44
+======== ===================

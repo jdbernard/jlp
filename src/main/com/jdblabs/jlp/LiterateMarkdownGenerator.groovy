@@ -1,3 +1,7 @@
+/**
+ * @author Jonathan Bernard (jdb@jdb-labs.com)
+ * @copyright JDB Labs 2010-2011
+ */
 package com.jdblabs.jlp
 
 import com.jdblabs.jlp.ast.*
@@ -8,6 +12,9 @@ import org.pegdown.PegDownProcessor
 
 import java.util.List
 
+/**
+ * @org jlp.jdb-labs.com/LiterateMarkdownGenerator
+ */
 public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
     protected PegDownProcessor pegdown

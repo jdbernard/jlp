@@ -1,9 +1,16 @@
+/**
+ * @author Jonathan Bernard (jdb@jdb-labs.com)
+ * @copyright JDB Labs 2010-2011
+ */
 package com.jdblabs.jlp
 
 import com.jdblabs.jlp.ast.*
 import java.util.List
 import java.util.Map
 
+/**
+ * @org jlp.jdb-labs.com/JLPBaseGenerator
+ */
 public abstract class JLPBaseGenerator {
 
     protected Processor processor

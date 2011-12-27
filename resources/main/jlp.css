@@ -28,7 +28,7 @@ table td {
     outline: 0; }
 
 td.docs, th.docs {
-    max-width: 450px;
+    max-width: 600px;
     min-width: 450px;
     min-height: 5pc;
     padding: 10px 25px 1px 50px;
