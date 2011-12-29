@@ -10,6 +10,10 @@ import org.parboiled.Rule;
 import org.parboiled.annotations.*;
 import org.parboiled.parserunners.ReportingParseRunner;
 
+/**
+ * 
+ * @org jlp.jdb-labs.com/JLPPegParser
+ */
 @BuildParseTree
 public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
@@ -38,77 +42,79 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  SourceFile = (Block / DocBlock / CodeBlock)+
+     *
+     *     SourceFile = (Block / DocBlock / CodeBlock)+
      *
      * Pushes a SourceFile node on the stack.
      */
     public Rule SourceFile() {
         return Sequence(
-            // At the start of processing a new SourceFile, we need to set up
-            // our internal state. 
+            /// At the start of processing a new SourceFile, we need to set up
+            /// our internal state. 
 
-            // Clear the line count.
+            /// Clear the line count.
             clearLineCount(),
 
-            // Add the top-level SourceFile AST node.
+            /// Add the top-level SourceFile AST node.
             push(new SourceFile()),
 
-            // A SourceFile is made up of one or more Blocks
+            /// A SourceFile is made up of one or more Blocks
             OneOrMore(Sequence(
-                // All of these options result in one new Block pushed onto the
-                // stack.
+                /// All of these options result in one new Block pushed onto the
+                /// stack.
                 FirstOf(
 
-                    // Match a whole Block. This pushes a Block on the stack.
+                    /// Match a whole Block. This pushes a Block on the stack.
                     Block(),    
 
-                    // A standalone DocBlock. We will create an empty CodeBlock
-                    // to pair with it, then push a new Block onto the stack
-                    // made from the DocBlock and the empty CodeBlock
+                    /// A standalone DocBlock. We will create an empty CodeBlock
+                    /// to pair with it, then push a new Block onto the stack
+                    /// made from the DocBlock and the empty CodeBlock
                     Sequence(
-                        // 1. We need to remember the line number to create the
-                        // Block
+                        /// 1. We need to remember the line number to create the
+                        ///    Block
                         push(curLineNum),
 
-                        // 2. Match the DocBlock.
+                        /// 2. Match the DocBlock.
                         DocBlock(),
 
-                        // 3. Create the empty CodeBlock.
+                        /// 3. Create the empty CodeBlock.
                         push(new CodeBlock(curLineNum)),
 
-                        // 4. Create the Block and push it onto the stack.
+                        /// 4. Create the Block and push it onto the stack.
                         push(new Block((CodeBlock) pop(), (DocBlock) pop(),
                             popAsInt()))),
 
-                    // A standalone CodeBlock. Similar to the standalone
-                    // DocBlock, we will create an empty DocBlock to pair with
-                    // the CodeBlock to make a Block, which is pushed onto the
-                    // stack:
-                    //
-                    // *Note: With the way the parser is currently written,
-                    //        this will only match a CodeBlock that occurs
-                    //        before any DocBlock.*
+                    /// A standalone CodeBlock. Similar to the standalone
+                    /// DocBlock, we will create an empty DocBlock to pair with
+                    /// the CodeBlock to make a Block, which is pushed onto the
+                    /// stack:
+                    ///
+                    /// *Note: With the way the parser is currently written,
+                    ///        this will only match a CodeBlock that occurs
+                    ///        before any DocBlock.*
                     Sequence(
-                        // 1. Remember the line number for the Block.
+                        /// 1. Remember the line number for the Block.
                         push(curLineNum),
 
-                        // 2. Create the empty DocBlock.
+                        /// 2. Create the empty DocBlock.
                         push(new DocBlock(curLineNum)),
 
-                        // 3. Match the CodeBlock
+                        /// 3. Match the CodeBlock
                         CodeBlock(),
 
-                        // 4. Create the Block and push it onto the stack
+                        /// 4. Create the Block and push it onto the stack
                         push(new Block((CodeBlock) pop(), (DocBlock) pop(),
                             popAsInt())))),
 
-                // pop the Block created by one of the above options and add it
-                // to the SourceFile
+                /// pop the Block created by one of the above options and add it
+                /// to the SourceFile
                 addBlockToSourceFile((Block) pop())))); }
 
     /**
      * Parses the rule:
-     *   Block = DocBlock CodeBlock
+     *
+     *     Block = DocBlock CodeBlock
      *
      * Pushes a Block onto the stack
      */
@@ -117,14 +123,15 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             push(curLineNum),
             DocBlock(), CodeBlock(),
 
-            // A DocBlock and a CodeBlock are pushed onto the stack by the
-            // above rules. Pop them off, along with the line number we pushed
-            // before that, and create a new Block node.
+            /// A DocBlock and a CodeBlock are pushed onto the stack by the
+            /// above rules. Pop them off, along with the line number we pushed
+            /// before that, and create a new Block node.
             push(new Block((CodeBlock) pop(), (DocBlock) pop(), popAsInt()))); }
 
     /**
      * Parses the rule:
-     *   DocBlock = SDocBlock / MDocBlock
+     *
+     *     DocBlock = SDocBlock / MDocBlock
      *
      * Pushes a DocBlock onto the stack.
      */
@@ -132,7 +139,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  SDocBlock = (SDirective / SDocText)+
+     *
+     *     SDocBlock = (SDirective / SDocText)+
      *
      * Pushes a DocBlock object onto the stack
      */
@@ -145,7 +153,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  MDocBlock = MDOC_START (MDirective / MDocText)+ MDOC_END
+     *
+     *     MDocBlock = MDOC_START (MDirective / MDocText)+ MDOC_END
      *
      * Pushes a DocBlock object onto the stack
      */
@@ -154,16 +163,17 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             push(new DocBlock(curLineNum)),
             MDOC_START,
             ZeroOrMore(Sequence(
-                // We need to be careful to exclude MDOC_END here, as there can
-                // be some confusion otherwise between the start of a line with
-                // MDOC_LINE_START and MDOC_END depending on what values the
-                // user has chosen for them
+                /// We need to be careful to exclude MDOC_END here, as there can
+                /// be some confusion otherwise between the start of a line with
+                /// MDOC_LINE_START and MDOC_END depending on what values the
+                /// user has chosen for them
                 TestNot(MDOC_END), FirstOf(MDirective(), MDocText()),
                 addToDocBlock((ASTNode) pop()))),
             MDOC_END); }
     /**
      * Parses the rule:
-     *  CodeBlock = (RemainingCodeLine)+
+     *
+     *     CodeBlock = (RemainingCodeLine)+
      *
      * Pushes a CodeBlock onto the stack.
      */
@@ -175,7 +185,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  SDirective = SDocLineStart AT (SLongDirective / SShortDirective)
+     *
+     *     SDirective = SDocLineStart AT (SLongDirective / SShortDirective)
      *
      * Pushes a Directive node on the stack.
      */
@@ -185,7 +196,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  MDirective = MDocLineStart? AT (MLongDirective / MShortDirective)
+     *
+     *     MDirective = MDocLineStart? AT (MLongDirective / MShortDirective)
      *
      * Pushes a Directive node onto the stack.
      */
@@ -196,7 +208,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  SLongDirective =
+     *
+     *     SLongDirective =
      *      (API_DIR / EXAMPLE_DIR) RemainingSDocLine SDocText?
      *
      * Pushes a Directive node onto the stack.
@@ -217,7 +230,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  MLongDirective = 
+     *
+     *     MLongDirective = 
      *      (API_DIR / EXAMPLE_DIR) RemainingMDocLine MDocText?
      *
      * Pushes a Directive node onto the stack.
@@ -238,7 +252,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  SShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingSDocLine
+     *
+     *     SShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingSDocLine
      *
      * Pushes a Directive node onto the stack.
      */
@@ -252,7 +267,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  MShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingMDocLine
+     *
+     *     MShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingMDocLine
      *
      * Pushes a Directive node onto the stack.
      */
@@ -266,7 +282,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  SDocText = (SDocLineStart !AT RemainingSDocLine)+
+     *
+     *     SDocText = (SDocLineStart !AT RemainingSDocLine)+
      *
      * Pushes a DocText node onto the stack.
      */
@@ -279,7 +296,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  MDocText = (MDocLineStart? !AT RemainingMDocLine)+
+     *
+     *     MDocText = (MDocLineStart? !AT RemainingMDocLine)+
      *
      * Pushes a DocText node onto the stack.
      */
@@ -293,7 +311,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  SDocLineStart = SPACE* SDOC_START SPACE?
+     *
+     *     SDocLineStart = SPACE* SDOC_START SPACE?
      */
     Rule SDocLineStart() {
         return Sequence(
@@ -301,7 +320,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  MDocLineStart = SPACE* !MDOC_END MDOC_LINE_START SPACE?
+     *
+     *     MDocLineStart = SPACE* !MDOC_END MDOC_LINE_START SPACE?
      */
     Rule MDocLineStart() {
         return Sequence(
@@ -309,7 +329,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  RemainingSDocLine = ((!EOL)* EOL) / ((!EOL)+ EOI)
+     *
+     *     RemainingSDocLine = ((!EOL)* EOL) / ((!EOL)+ EOI)
      */
     Rule RemainingSDocLine() {
         return FirstOf(
@@ -318,30 +339,32 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * Parses the rule:
-     *  RemainingMDocLine = 
+     *
+     *     RemainingMDocLine = 
      *      ((!(EOL / MDOC_END))* EOL) /
      *      ((!MDOC_END)+)
      */
     Rule RemainingMDocLine() {
         return FirstOf(
-            // End of line, still within the an M-style comment block
+            /// End of line, still within the an M-style comment block
             Sequence(
                 ZeroOrMore(Sequence(TestNot(FirstOf(EOL, MDOC_END)), ANY)),
                 EOL,
                 incLineCount()),
 
-            // End of M-style comment block
+            /// End of M-style comment block
             OneOrMore(Sequence(TestNot(MDOC_END), ANY))); }
 
     /**
      * Parses the rule:
-     *  RemainingCodeLine = 
+     *
+     *     RemainingCodeLine = 
      *      ((!(EOL / MDOC_START / SDocLineStart))* EOL) /
      *      (!(MDOC_START / SDocLineStart))+
      */
     Rule RemainingCodeLine() {
         return FirstOf(
-            // End of line, still within the code block.
+            /// End of line, still within the code block.
             Sequence(
                 ZeroOrMore(Sequence(
                     TestNot(FirstOf(EOL, MDOC_START, SDocLineStart())),
@@ -349,7 +372,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 EOL,
                 incLineCount()),
 
-            // Found an MDOC_START or SDocLineStart
+            /// Found an MDOC_START or SDocLineStart
             OneOrMore(Sequence(TestNot(FirstOf(MDOC_START, SDocLineStart())), ANY))); }
 
     Rule AT         = Ch('@').label("AT");
@@ -357,13 +380,13 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
     Rule NOT_EOL    = Sequence(TestNot(EOL), ANY).label("NOT_EOL");
     Rule SPACE      = AnyOf(" \t").label("SPACE");
 
-    // Configurable
+    /// Configurable
     Rule MDOC_START;
     Rule MDOC_END;
     Rule MDOC_LINE_START;
     Rule SDOC_START;
 
-    // directive terminals
+    /// directive terminals
     Rule AUTHOR_DIR     = IgnoreCase("author");
     Rule COPYRIGHT_DIR  = IgnoreCase("copyright");
     Rule API_DIR        = IgnoreCase("api");

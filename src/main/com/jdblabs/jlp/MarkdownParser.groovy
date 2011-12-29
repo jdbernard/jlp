@@ -1,7 +1,14 @@
+/**
+ * @author Jonathan Bernard (jdb@jdb-labs.com)
+ * @copyright JDB Labs 2010-2011
+ */
 package com.jdblabs.jlp
 
 import com.jdblabs.jlp.ast.*
 
+/**
+ * @org jlp.jdb-labs.com/MarkdownParser
+ */
 public class MarkdownParser implements JLPParser {
 
     public SourceFile parse(String input) {

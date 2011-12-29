@@ -6,6 +6,8 @@ package com.jdblabs.jlp
 
 import org.parboiled.BaseParser
 import org.parboiled.Parboiled
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * Processor processes one batch of input files to create a set of output files.
@@ -48,6 +50,8 @@ public class Processor {
     /// them here.
     protected Map<String, JLPParser> parsers = [:]
     protected Map<String, JLPBaseGenerator> generators = [:]
+
+    private Logger log = LoggerFactory.getLogger(getClass())
 
     /// ### Public Methods.
     /// @org jlp.jdb-labs.com/Processor/public-methods
@@ -97,14 +101,16 @@ public class Processor {
         ///   the parser for that file type and parse the file into an abstract
         ///   syntax tree (AST).
         processDocs {
+            log.trace("Parsing '{}'.", currentDocId)
             def parser = getParser(sourceTypeForFile(currentDoc.sourceFile))
             // TODO: error detection
             currentDoc.sourceAST = parser.parse(currentDoc.sourceFile.text) }
 
         /// * Run our generator parse phase (see
-        ///   jlp://com.jdb-labs.jlp.JLPBaseGenerator/phases for an explanation
-        ///   of the generator phases).
+        ///   [`JLPBaseGenerator`](jlp://com.jdb-labs.jlp.JLPBaseGenerator/phases)
+        ///   for an explanation of the generator phases).
         processDocs {
+            log.trace("Second-pass parsing for '{}'.", currentDocId)
             def generator = getGenerator(sourceTypeForFile(currentDoc.sourceFile))
             // TODO: error detection
             generator.parse(currentDoc.sourceAST) }
@@ -112,6 +118,7 @@ public class Processor {
 
         /// * Second pass by the generators, the emit phase.
         processDocs {
+            log.trace("Emitting documentation for '{}'.", currentDocId)
             def generator = getGenerator(sourceTypeForFile(currentDoc.sourceFile))
             currentDoc.output = generator.emit(currentDoc.sourceAST) }
 
@@ -124,6 +131,9 @@ public class Processor {
 
             File outputFile = new File(outputRoot, relativePath + ".html")
             File outputDir = outputFile.parentFile
+
+            log.trace("Saving output for '{}' to '{}'",
+                currentDocId, outputFile)
 
             /// Create the directory for this file if it does not exist.
             if (!outputDir.exists()) { outputDir.mkdirs() }

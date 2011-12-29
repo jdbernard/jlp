@@ -8,6 +8,8 @@ import com.jdblabs.jlp.ast.ASTNode
 import com.jdblabs.jlp.ast.SourceFile
 import org.parboiled.Parboiled
 import org.parboiled.parserunners.ReportingParseRunner
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 /**
  * @api JLPMain is the entrypoint for the system. It is responsible for parsing
@@ -15,6 +17,10 @@ import org.parboiled.parserunners.ReportingParseRunner
  * @org jlp.jdb-labs.com/JLPMain
  */
 public class JLPMain {
+
+    public static final String VERSION = "1.2"
+
+    private static Logger log = LoggerFactory.getLogger(JLPMain.class)
 
     public static void main(String[] args) {
 
@@ -33,18 +39,24 @@ public class JLPMain {
             longOpt: 'css-file', args: 1, required: false, argName: 'css-file')
         cli._(longOpt: 'relative-path-root', args: 1, required: false,
             'Resolve all relative paths against this root.')
+        cli._(longOpt: 'version', 'Display the JLP version information.')
 
         /// #### Parse the options.
         def opts = cli.parse(args)
 
-        /// Display help if requested.
+        /// Display help and version information if requested.
         if (opts.h) {
             cli.usage()
+            return }
+
+        if (opts.version) {
+            println "JLP v$VERSION"
             return }
 
         /// Get the relative path root (or set to current directory if it was
         /// not given)
         def pathRoot = new File(opts."relative-path-root" ?: ".")
+        log.debug("Relative path root: '{}'.", pathRoot.canonicalPath)
 
         /// If our root is non-existant we will print an error and exit.. This
         /// is possible if a relative path root was passed as an option.
@@ -63,6 +75,8 @@ public class JLPMain {
         /// Create the output directory if it does not exist.
         if (!outputDir.exists()) outputDir.mkdirs()
 
+        log.debug("Output directory: '{}'.", outputDir.canonicalPath)
+
         /// Get the CSS theme to use. We will start by assuming the default will
         /// be used.
         def css = JLPMain.class.getResourceAsStream("/jlp.css")
@@ -76,7 +90,10 @@ public class JLPMain {
                 cssFile = new File(pathRoot, cssFile.path) }
                 
             /// Finally, make sure the CSS file actually exists.
-            if (cssFile.exists()) { css = cssFile }
+            if (cssFile.exists()) {
+                css = cssFile
+                log.debug("Loading CSS from this file: '{}'.",
+                    cssFile.canonicalPath) }
 
             /// If it does not, we are going to warn the user and keep the
             /// default.
@@ -111,9 +128,9 @@ public class JLPMain {
                 
             /// If this file is a directory, we want to add all the files in it
             /// to our input list, recursing into all the subdirectories and
-            /// adding their files as well.
+            /// adding their files as well. We will ignore hidden files.
             if (file.isDirectory()) { file.eachFileRecurse {
-                if (it.isFile()) { inputFiles << it }}}
+                if (it.isFile() && !it.isHidden()) { inputFiles << it }}}
 
             /// Not a directory, just add the file.
             else { inputFiles << file } }

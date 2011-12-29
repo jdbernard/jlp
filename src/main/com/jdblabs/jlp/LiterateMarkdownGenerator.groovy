@@ -13,10 +13,14 @@ import org.pegdown.PegDownProcessor
 import java.util.List
 
 /**
+ * The LiterateMarkdownGenerator is an implementation of JLPBaseGenerator that
+ * uses [Markdown](http://daringfireball.net/projects/markdown/) to process the
+ * documentation into HTML output.
  * @org jlp.jdb-labs.com/LiterateMarkdownGenerator
  */
 public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
+    /// We will use the PegDown library for generating the Markdown output.
     protected PegDownProcessor pegdown
 
     public LiterateMarkdownGenerator(Processor processor) {
@@ -25,6 +29,13 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         pegdown = new PegDownProcessor(
             Extensions.TABLES | Extensions.DEFINITIONS) }
 
+    //  ===================================
+    /** ### Parse phase implementation. ###  */
+    //  ===================================
+
+    /** Implement the parse phase for *Directive* nodes. We are interested
+      * specifically in saving the link anchor information from *org*
+      * directives. */
     protected void parse(Directive directive) {
         switch(directive.type) {
             case DirectiveType.Org:
@@ -39,14 +50,23 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
                 break // do nothing
             } }
 
+    /** We are not doing any parsing for *CodeBlocks* or *DocTexts*. We have to
+      * implement them, as they are abstract on JLPBaseGenerator. */
     protected void parse(CodeBlock codeBlock) {} // nothing to do
     protected void parse(DocText docText) {} // nothing to do
 
+    //  ==================================
+    /** ### Emit phase implementation. ###  */
+    //  ==================================
+
+    /** @api Emit a *SourceFile*.
+      * Each *SourceFile* becomes one ouput HTML file. This method is the entry
+      * point for a file to be emitted. */
     protected String emit(SourceFile sourceFile) {
         StringBuilder sb = new StringBuilder()
 
 
-        // Create the HTML file head
+        /// Create the HTML head and begin the body. 
         sb.append(
 """<!DOCTYPE html>
 <html>
@@ -64,10 +84,10 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
                 </tr></thead>
                 <tbody>""")
 
-        // Emit the document to Markdown
+        /// Emit all of the blocks in the body of the html file.
         sourceFile.blocks.each { block -> sb.append(emit(block)) }
 
-        // Create the HTML file foot
+        /// Create the HTML footer.
         sb.append(
 """                </tbody>
             </table>
@@ -77,39 +97,47 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
         return sb.toString() }
 
+    /** @api Emit a *Block*. */
     protected String emit(Block block) {
         StringBuilder sb = new StringBuilder()
 
-        // Look for an `@org` directive in the `Block`
+        /// Look for an `@org` directive in the `Block` (already found in the
+        /// parse phase)..
         Directive orgDir = block.docBlock.directives.find {
             it.type == DirectiveType.Org }
 
-        // Create the `tr` that will hold the `Block`
+        /// Create the `tr` that will hold the `Block`. If we found an `@org`
+        /// directive we will add the id here.
         if (orgDir) { sb.append("\n<tr id='${orgDir.value}'>") }
         else        { sb.append("<tr>") }
 
-        // Create the `td` for the documentation.
+        /// Create the `td` for the documentation.
         sb.append('\n<td class="docs">')
         sb.append(emit(block.docBlock))
         sb.append('</td>')
 
-        // Create the `td` for the `CodeBlock`
+        /// Create the `td` for the `CodeBlock`
         sb.append('\n<td class="code">')
         sb.append(emit(block.codeBlock))
         sb.append('</td>')
 
-        // Close the table row.
+        /// Close the table row.
         sb.append('</tr>') }
 
+    /** @api Emit a *DocBlock*. */
     protected String emit(DocBlock docBlock) {
-        // Create a queue for the doc block elements, we are going to 
-        // sort them by type and line number
+        /// Create a queue for the doc block elements, we are going to 
+        /// sort them by type and line number
         List emitQueue 
 
-        // Later we will need a string builder to hold our result.
+        /// Later we will need a string builder to hold our result.
         StringBuilder sb
 
-        // Add all the directives
+        /** Add all the directives. We are also assigning priorities here that
+          * we will use along with the line numbers to sort the elements. Our
+          * goal is to preserve the order of doc blocks and doc-block-like
+          * elements (examples, api documentation, etc.) while pushing orgs,
+          * authorship and other directives to the top. */
         emitQueue = docBlock.directives.collect { directive ->
             def queueItem = [lineNumber: directive.lineNumber, value: directive]
             switch(directive.type) {
@@ -121,90 +149,98 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
             
             return queueItem }
 
-        // Add all the doc text blocks
+        /// Add all the doc text blocks.
         emitQueue.addAll(docBlock.docTexts.collect { docText ->
             [lineNumber: docText.lineNumber, priority: 50, value: docText] })
                         
 
-        // Sort the emit queue by priority, then line number.
+        /// Sort the emit queue by priority, then line number.
         emitQueue.sort(
             {i1, i2 -> i1.priority != i2.priority ?
                         i1.priority - i2.priority :
                         i1.lineNumber - i2.lineNumber} as Comparator)
     
-        // Finally, we want to treat the whole block as one markdown chunk, so
-        // we will concatenate the values in the emit queue and then process
-        // the whole block once
+        /** Finally, we want to treat the whole block as one markdown chunk so
+          * we will concatenate the values in the emit queue and then send the
+          * whole block at once to the markdown processor. */
         sb = new StringBuilder()
         emitQueue.each { queueItem -> sb.append(emit(queueItem.value)) } 
 
         return processMarkdown(sb.toString())
     }
 
+    /** @api Emit a *CodeBlock*. */
     protected String emit(CodeBlock codeBlock) {
         def codeLines
 
-        // Collect the lines into an array.
+        /// Collect the lines into an array.
         codeLines = codeBlock.lines.collect { lineNumber, line ->
             [lineNumber, line] }
 
-        // Sort by line number.
+        /// Sort by line number.
         codeLines.sort({ i1, i2 -> i1[0] - i2[0] } as Comparator)
 
         codeLines = codeLines.collect { arr -> arr[1] }
 
-        // write out the lines in a <pre><code> block
+        /// Write out the lines in a <pre><code> block
         return "<pre><code>${codeLines.join('')}</code></pre>" }
 
+    /** @api Emit a *DocText*. */
     protected String emit(DocText docText) { return docText.value }
 
+    /** @api Emit a *Directive*. */
     protected String emit(Directive directive) {
         switch(directive.type) {
 
-            // An `@api` directive is immediately processed and wrapped in a
-            // div (we need to process this now because Markdown does not
-            // process input inside HTML elements).
+            /** An `@api` directive is immediately processed and wrapped in a
+              * div (we need to process this now because Markdown does not
+              * process input inside HTML elements). */
             case DirectiveType.Api:
                 return "<div class='api'>" +
                     processMarkdown(directive.value) + "</div>\n"
 
-            // An `@author` directive is turned into a definition list.
+            /// `@author` directive is turned into a definition list.
+
             case DirectiveType.Author:
                 return "Author\n:   ${directive.value}\n"
 
             case DirectiveType.Copyright:
                 return "\n&copy; ${directive.value}\n"
 
-            // An `@example` directive is returned as is
+            /// An `@example` directive is returned as is.
             case DirectiveType.Example:
                 return directive.value
 
-            // An `@org` directive is ignored.
-            case DirectiveType.Org: return "" }
-    }
+            /// An `@org` directive is ignored here. We already emitted the id
+            /// when we started the block.
+            case DirectiveType.Org: return "" } }
 
+    /** This is a helper method to process a block of text as Markdown. We need
+      * to do some additional processing to deal with `jlp://` org links that
+      * may be present. */
     protected String processMarkdown(String markdown) {
-        // convert to HTML from Markdown
+
+        /// Convert to HTML from Markdown
         String html = pegdown.markdownToHtml(markdown)
 
-        // replace internal `jlp://` links with actual links based on`@org`
-        // references
-        html = html.replaceAll(/jlp:\/\/([^\s"]+)/) { wholeMatch, linkId ->
+        /// Replace internal `jlp://` links with actual links based on`@org`
+        /// references.
+        html = html.replaceAll(/href=['"]jlp:\/\/([^\s"]+)['"]/) { wholeMatch, linkId ->
 
-            // Get the org data stored for this org id.
+            /// Get the org data we found in the parse phase for this org id.
             def link = processor.linkAnchors[linkId]
             String newLink
 
             if (!link) {
                 // We do not have any reference to this id.
                 /* TODO: log error */
-                newLink = "broken_link(${linkId})" }
+                newLink = "href=\"broken_link(${linkId})\"" }
 
-            // This link points to a location in this document.
+            /// This link points to a location in this document.
             else if (processor.currentDocId == link.sourceDocId) {
-                newLink = "#$linkId" }
+                newLink = "href=\"#${linkId}\"" }
 
-            // The link should point to a different document.
+            /// The link should point to a different document.
             else {
                 TargetDoc thisDoc = processor.currentDoc
                 TargetDoc linkDoc = processor.docs[link.sourceDocId]
@@ -213,13 +249,12 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
                     thisDoc.sourceFile.parentFile,
                     linkDoc.sourceFile)
 
-                // The target document may not be in the same directory
-                // as us, backtrack to the (relative) top of our directory
-                // structure.
-                newLink = pathToLinkedDoc + ".html#${linkId}" }
+                /** The target document may not be in the same directory
+                  * as us, backtrack to the (relative) top of our directory
+                  * structure. */
+                newLink = 'href="' + pathToLinkedDoc + ".html#${linkId}\"" }
                 
             return newLink }
 
-        return html;
-    }
+        return html; }
 }
