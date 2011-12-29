@@ -36,6 +36,13 @@ public class Directive extends ASTNode {
      *     following the directive will be included inline as an example,
      *     typically typeset in a monospace font.
      *
+     * Include
+     * :   Include the contents of a url inline in the documentation where this
+     *     directive occurs. This is primarily intended to allow the author to
+     *     include other parts of the documentation inline via the `jlp`
+     *     protocol and link anchors, but it is not restriced to the `jlp`
+     *     protocol. The include directive is followed by a URL to the resource
+     *     to include. This can be any valid URL.
      * Org
      * :   Used to create a link anchor in the documentation. The `jlp` protocol
      *     in a URL allows the author to link back to a link anchor. Refer to
@@ -43,11 +50,12 @@ public class Directive extends ASTNode {
      *     more information about link anchors.
      */
     public static enum DirectiveType {
-        Api, Author, Copyright, Example, Org;
+        Api, Author, Copyright, Example, Include, Org;
         
         public static DirectiveType parse(String typeString) {
             valueOf(typeString.toLowerCase().capitalize()) } }
 
+    public final DocBlock parentBlock;
     public final DirectiveType type;
     public final String value;
 

@@ -1,0 +1,12 @@
+`Include` Directive.
+====================
+
+Add a new directive: `include`. This directive allows the author to include
+the contents of a URL inline in the documentation (can be an internal JLP
+reference URL).
+
+----
+
+======== ===================
+Created: 2011-12-29T11:23:52
+======== ===================

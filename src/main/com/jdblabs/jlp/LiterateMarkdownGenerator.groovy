@@ -145,6 +145,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
                 case DirectiveType.Author:      queueItem.priority = 10; break
                 case DirectiveType.Copyright:   queueItem.priority = 11; break
                 case DirectiveType.Example:     queueItem.priority = 50; break
+                case DirectiveType.Include:     queueItem.priority = 50; break
                 case DirectiveType.Org:         queueItem.priority =  0; break }
             
             return queueItem }
@@ -210,6 +211,9 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
             /// An `@example` directive is returned as is.
             case DirectiveType.Example:
                 return directive.value
+
+            // TODO:
+            // case DirectiveType.Include:
 
             /// An `@org` directive is ignored here. We already emitted the id
             /// when we started the block.

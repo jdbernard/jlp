@@ -19,6 +19,29 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     int curLineNum = 1;
 
+    /// ### Constructors ###
+    /// --------------------
+    /// @org jlp.jdb-labs.com/JLPPegParser/constructors
+
+    /**
+     * Being a Parboiled parser, this class should not be instantiated by
+     * directly calling the constructor, but by calling
+     * `Parboiled.createParser()`.
+     * @example Here are some examples of how you would instantiate the
+     * JLPPegParser:
+     *
+     *     // Erlang-style documentation
+     *     Parboiled.createParser(JLPPegParser.class, "%%");
+     *
+     *     // C++-style documentation
+     *     Parboiled.createParser(JLPPegParser.class, "/**", "* /", "*", "///");
+     */
+
+    /**
+     * #### Full constructor
+     * This allows the caller to specific all four of the comment delimiters
+     * recognized by the parser.
+     */
     public JLPPegParser(String mdocStart, String mdocEnd,
         String mdocLineStart, String sdocStart) {
 
@@ -27,12 +50,28 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
         SDOC_START = String(sdocStart).label("SDOC_START");
         MDOC_LINE_START = AnyOf(mdocLineStart).label("MDOC_LINE_START"); }
 
+    /**
+     * #### Single-line comments only constructor.
+     * This allows the caller to easily set up the parser to only recognize
+     * single-line comments with no defined syntax for multi-line comments. For
+     * example this is used to instantiate a parser for Erlang source files
+     * because Erlang has no defined multi-line comment syntax.
+     */
     public JLPPegParser(String sdocStart) {
         MDOC_START = NOTHING;
         MDOC_LINE_START = NOTHING;
         MDOC_END = NOTHING;
         SDOC_START = String(sdocStart).label("SDOC_START"); }
 
+    /**
+     * #### Default constructor.
+     * The default constructor creates a JLPPegParser configured to recognize
+     * comments used by languages like C++ and Java. It follows the convention
+     * of using `/**` to start multiline documentation comments and `///` to
+     * start a single-line comment. This allows the author to choose which
+     * comments remain with the code and which are considered part of the formal
+     * documentation.
+     */
     public JLPPegParser() {
         this("/**", "*/", "!#$%^&*()_-=+|;:'\",<>?~`", "///"); }
 
@@ -40,7 +79,11 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
         ReportingParseRunner rpr = new ReportingParseRunner(this.SourceFile());
         return (SourceFile) rpr.run(input).resultValue; }
 
+    /// ### Parser Rules ###
+    /// --------------------
+
     /**
+     * #### SourceFile
      * Parses the rule:
      *
      *     SourceFile = (Block / DocBlock / CodeBlock)+
@@ -90,9 +133,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                     /// the CodeBlock to make a Block, which is pushed onto the
                     /// stack:
                     ///
-                    /// *Note: With the way the parser is currently written,
-                    ///        this will only match a CodeBlock that occurs
-                    ///        before any DocBlock.*
+                    /// *Note: With the way the parser is currently written,*
+                    /// *this will only match a CodeBlock that occurs before*
+                    /// *any DocBlock.*
                     Sequence(
                         /// 1. Remember the line number for the Block.
                         push(curLineNum),
@@ -112,6 +155,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addBlockToSourceFile((Block) pop())))); }
 
     /**
+     * #### Block
      * Parses the rule:
      *
      *     Block = DocBlock CodeBlock
@@ -129,6 +173,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             push(new Block((CodeBlock) pop(), (DocBlock) pop(), popAsInt()))); }
 
     /**
+     * #### DocBlock
      * Parses the rule:
      *
      *     DocBlock = SDocBlock / MDocBlock
@@ -138,6 +183,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
     Rule DocBlock() { return FirstOf(SDocBlock(), MDocBlock()); }
 
     /**
+     * #### SDocBlock 
      * Parses the rule:
      *
      *     SDocBlock = (SDirective / SDocText)+
@@ -152,6 +198,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToDocBlock((ASTNode) pop())))); }
 
     /**
+     * #### MDocBlock 
      * Parses the rule:
      *
      *     MDocBlock = MDOC_START (MDirective / MDocText)+ MDOC_END
@@ -163,14 +210,15 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             push(new DocBlock(curLineNum)),
             MDOC_START,
             ZeroOrMore(Sequence(
-                /// We need to be careful to exclude MDOC_END here, as there can
+                /// We need to be careful to exclude `MDOC_END` here, as there can
                 /// be some confusion otherwise between the start of a line with
-                /// MDOC_LINE_START and MDOC_END depending on what values the
+                /// `MDOC_LINE_START` and `MDOC_END` depending on what values the
                 /// user has chosen for them
                 TestNot(MDOC_END), FirstOf(MDirective(), MDocText()),
                 addToDocBlock((ASTNode) pop()))),
             MDOC_END); }
     /**
+     * #### CodeBlock 
      * Parses the rule:
      *
      *     CodeBlock = (RemainingCodeLine)+
@@ -184,6 +232,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToCodeBlock(match())))); }
 
     /**
+     * #### SDirective 
      * Parses the rule:
      *
      *     SDirective = SDocLineStart AT (SLongDirective / SShortDirective)
@@ -195,6 +244,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             SDocLineStart(), AT, FirstOf(SLongDirective(), SShortDirective())); }
 
     /**
+     * #### MDirective 
      * Parses the rule:
      *
      *     MDirective = MDocLineStart? AT (MLongDirective / MShortDirective)
@@ -207,6 +257,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             AT, FirstOf(MLongDirective(), MShortDirective())); }
 
     /**
+     * #### SLongDirective 
      * Parses the rule:
      *
      *     SLongDirective =
@@ -229,6 +280,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             push(new Directive(popAsString(), popAsString(), popAsInt()))); }
 
     /**
+     * #### MLongDirective 
      * Parses the rule:
      *
      *     MLongDirective = 
@@ -251,36 +303,43 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             push(new Directive(popAsString(), popAsString(), popAsInt()))); }
 
     /**
+     * #### SShortDirective 
      * Parses the rule:
      *
-     *     SShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingSDocLine
+     *     SShortDirective =
+     *       (AUTHOR_DIR / ORG_DIR / INCLUDE_DIR / COPYRIGHT_DIR)
+     *       RemainingSDocLine
      *
      * Pushes a Directive node onto the stack.
      */
     Rule SShortDirective() {
         return Sequence(
             push(curLineNum),
-            FirstOf(AUTHOR_DIR, ORG_DIR, COPYRIGHT_DIR), push(match()),
+            FirstOf(AUTHOR_DIR, ORG_DIR, INCLUDE_DIR, COPYRIGHT_DIR), push(match()),
             RemainingSDocLine(),
             
             push(new Directive(match().trim(), popAsString(), popAsInt()))); }
 
     /**
+     * #### MShortDirective 
      * Parses the rule:
      *
-     *     MShortDirective = (AUTHOR_DIR / ORG_DIR / COPYRIGHT_DIR) RemainingMDocLine
+     *     MShortDirective =
+     *       (AUTHOR_DIR / ORG_DIR / INCLUDE_DIR / COPYRIGHT_DIR)
+     *       RemainingMDocLine
      *
      * Pushes a Directive node onto the stack.
      */
     Rule MShortDirective() {
         return Sequence(
             push(curLineNum),
-            FirstOf(AUTHOR_DIR, ORG_DIR, COPYRIGHT_DIR), push(match()),
+            FirstOf(AUTHOR_DIR, ORG_DIR, INCLUDE_DIR, COPYRIGHT_DIR), push(match()),
             RemainingMDocLine(),
 
             push(new Directive(match().trim(), popAsString(), popAsInt()))); }
 
     /**
+     * #### SDocText 
      * Parses the rule:
      *
      *     SDocText = (SDocLineStart !AT RemainingSDocLine)+
@@ -295,6 +354,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToDocText(match())))); }
 
     /**
+     * #### MDocText 
      * Parses the rule:
      *
      *     MDocText = (MDocLineStart? !AT RemainingMDocLine)+
@@ -310,6 +370,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToDocText(match())))); }
 
     /**
+     * #### SDocLineStart 
      * Parses the rule:
      *
      *     SDocLineStart = SPACE* SDOC_START SPACE?
@@ -319,6 +380,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             ZeroOrMore(SPACE), SDOC_START, Optional(SPACE)); }
 
     /**
+     * #### MDocLineStart 
      * Parses the rule:
      *
      *     MDocLineStart = SPACE* !MDOC_END MDOC_LINE_START SPACE?
@@ -328,6 +390,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             ZeroOrMore(SPACE), TestNot(MDOC_END), MDOC_LINE_START, Optional(SPACE)); }
 
     /**
+     * #### RemainingSDocLine 
      * Parses the rule:
      *
      *     RemainingSDocLine = ((!EOL)* EOL) / ((!EOL)+ EOI)
@@ -338,6 +401,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             Sequence(OneOrMore(NOT_EOL), EOI, incLineCount())); }
 
     /**
+     * #### RemainingMDocLine 
      * Parses the rule:
      *
      *     RemainingMDocLine = 
@@ -356,6 +420,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             OneOrMore(Sequence(TestNot(MDOC_END), ANY))); }
 
     /**
+     * #### RemainingCodeLine 
      * Parses the rule:
      *
      *     RemainingCodeLine = 
@@ -375,45 +440,60 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             /// Found an MDOC_START or SDocLineStart
             OneOrMore(Sequence(TestNot(FirstOf(MDOC_START, SDocLineStart())), ANY))); }
 
+    /// ### Terminal Rules ###
+    /// ----------------------
+
+    /// #### Directive terminals
+    Rule API_DIR        = IgnoreCase("api");
+    Rule AUTHOR_DIR     = IgnoreCase("author");
+    Rule COPYRIGHT_DIR  = IgnoreCase("copyright");
+    Rule EXAMPLE_DIR    = IgnoreCase("example");
+    Rule INCLUDE_DIR    = IgnoreCase("include");
+    Rule ORG_DIR        = IgnoreCase("org");
+
+    /// #### Hard-coded terminals.
     Rule AT         = Ch('@').label("AT");
     Rule EOL        = FirstOf(String("\r\n"), Ch('\n'), Ch('\r')).label("EOL");
     Rule NOT_EOL    = Sequence(TestNot(EOL), ANY).label("NOT_EOL");
     Rule SPACE      = AnyOf(" \t").label("SPACE");
 
-    /// Configurable
+    /// #### Configurable terminals
     Rule MDOC_START;
     Rule MDOC_END;
     Rule MDOC_LINE_START;
     Rule SDOC_START;
 
-    /// directive terminals
-    Rule AUTHOR_DIR     = IgnoreCase("author");
-    Rule COPYRIGHT_DIR  = IgnoreCase("copyright");
-    Rule API_DIR        = IgnoreCase("api");
-    Rule EXAMPLE_DIR    = IgnoreCase("example");
-    Rule ORG_DIR        = IgnoreCase("org");
+    /// ### Utility/Helper Functions. ###
+    /// ---------------------------------
 
+    /// The `popAs` functions exist primarily to make the parser rules more readable
+    /// by providing shortcuts for common casts.
     String popAsString() { return (String) pop(); }
-
     Integer popAsInt() { return (Integer) pop(); }
 
+    /// Line number management functions.
     boolean clearLineCount() { curLineNum = 1; return true; }
-
     boolean incLineCount() { curLineNum++; return true; }
 
+    /**
+     * #### addToDocBlock
+     * Add the given block to the SourceFile node expected to be at the top of
+     * the parser value stack.
+     */
     boolean addBlockToSourceFile(Block block) {
-        SourceFile sourceFile = (SourceFile) pop();
-        sourceFile.blocks.add(block);
-        return push(sourceFile); }
+        ((SourceFile) peek()).blocks.add(block);
+        return true; }
 
     /**
-     * Pop off a DocBlock, add the given Directive or DocText and push the
-     * DocBlock back onto the stack.
+     * #### addToDocBlock
+     * Add the given Directive or DocText to the DocBlock expected to be at the
+     * top of the parser value stack.
      */
     boolean addToDocBlock(ASTNode an) {
         DocBlock docBlock = (DocBlock) pop();
         if (an instanceof Directive) {
-            docBlock.directives.add((Directive) an); }
+            docBlock.directives.add((Directive) an);
+            ((Directive) an).parentBlock = docBlock; }
         else if (an instanceof DocText) {
             docBlock.docTexts.add((DocText) an); }
         else { throw new IllegalStateException(); }
@@ -429,6 +509,12 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
         docText.value += line;
         return push(docText); }
 
+    /**
+     * #### printValueStack
+     * A method to help with debugging. It can be called during the parser
+     * rules. When called it prints out the current contents of the parser value
+     * stack.
+     */
     boolean printValueStack() {
         for (int i = 0; i < getContext().getValueStack().size(); i++) {
             System.out.println(i + ": " + peek(i)); }
