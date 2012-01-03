@@ -17,6 +17,11 @@ public class TargetDoc {
 
     /// The original source file.
     public File sourceFile
+    public String sourceDocId
+
+    /// The source code type (ie. `java`, `erlang`, etc.). See
+    /// [Processor.sourceTypeForFile](jlp.jdb-labs.com/Processor/sourceTypeForFile)
+    public String sourceType
 
     public String output
 }

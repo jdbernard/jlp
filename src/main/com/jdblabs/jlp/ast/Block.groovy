@@ -5,7 +5,7 @@
 package com.jdblabs.jlp.ast
 
 /**
- * ASTNode for *Block*s.
+ * ASTNode for *Blocks*.
  * @org jlp.jdb-labs.com/ast/Block
  */
 public class Block extends ASTNode {

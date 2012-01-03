@@ -6,7 +6,8 @@ package com.jdblabs.jlp.ast
 
 /**
  * The top-level AST element. This represents a source file.
- * @org jlp.jdb-labs.com/ast/SourceFile */
+ * @org jlp.jdb-labs.com/ast/SourceFile
+ */
 public class SourceFile {
 
     /** The source file gets split into two parts during the initial parsing by

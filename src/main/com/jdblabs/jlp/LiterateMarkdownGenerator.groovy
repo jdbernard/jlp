@@ -10,6 +10,8 @@ import com.jdblabs.jlp.ast.Directive.DirectiveType
 import org.pegdown.Extensions
 import org.pegdown.PegDownProcessor
 
+import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4 as escape
+
 import java.util.List
 
 /**
@@ -41,7 +43,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
             case DirectiveType.Org:
                 LinkAnchor anchor = new LinkAnchor(
                     id: directive.value,
-                    directive: directive,
+                    source: directive,
                     sourceDocId: processor.currentDocId)
 
                 processor.linkAnchors[anchor.id] = anchor
@@ -71,15 +73,41 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 """<!DOCTYPE html>
 <html>
     <head>
-        <title>${processor.currentDocId}</title>
+        <title>${escape(processor.currentDocId)}</title>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-        <link rel="stylesheet" media="all" href="jlp.css"/>
+        <link type="text/css" rel="stylesheet" media="all"
+            href="${resolveLink('/css/jlp.css')}"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="${resolveLink('/sh/styles/shCoreDefault.css')}"></link>
+        <script type="text/javascript"
+            src="${resolveLink('/sh/scripts/XRegExp.js')}"></script>
+        <script type="text/javascript"
+            src="${resolveLink('/sh/scripts/shCore.js')}"></script>""")
+
+        /// If there is a language-specific brush, include it
+        def shBrush = processor.shBrushForSourceType(
+            processor.currentDoc.sourceType)
+
+        if (shBrush) { sb.append("""
+
+        <script type="text/javascript"
+            src="${resolveLink('/sh/scripts/' + shBrush + '.js')}"></script>""") }
+
+        /// Finish our header and begin the body.
+        sb.append("""
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
     </head>
     <body>
         <div id="container">
             <table cellpadding="0" cellspacing="0">
                 <thead><tr>
-                    <th class="docs"><h1>${processor.currentDocId}</h1></th>
+                    <th class="docs"><h1>${escape(processor.currentDocId)}</h1></th>
                     <th class="code"/>
                 </tr></thead>
                 <tbody>""")
@@ -108,6 +136,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
         /// Create the `tr` that will hold the `Block`. If we found an `@org`
         /// directive we will add the id here.
+        // TODO: should this be escaped?
         if (orgDir) { sb.append("\n<tr id='${orgDir.value}'>") }
         else        { sb.append("<tr>") }
 
@@ -183,8 +212,9 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
         codeLines = codeLines.collect { arr -> arr[1] }
 
-        /// Write out the lines in a <pre><code> block
-        return "<pre><code>${codeLines.join('')}</code></pre>" }
+        /// Write out the lines in a `<pre>` block
+        return "<pre class=\"brush: ${processor.currentDoc.sourceType};\">" +
+            "${escape(codeLines.join(''))}</pre>" }
 
     /** @api Emit a *DocText*. */
     protected String emit(DocText docText) { return docText.value }
@@ -229,36 +259,13 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
         /// Replace internal `jlp://` links with actual links based on`@org`
         /// references.
-        html = html.replaceAll(/href=['"]jlp:\/\/([^\s"]+)['"]/) { wholeMatch, linkId ->
-
-            /// Get the org data we found in the parse phase for this org id.
-            def link = processor.linkAnchors[linkId]
-            String newLink
-
-            if (!link) {
-                // We do not have any reference to this id.
-                /* TODO: log error */
-                newLink = "href=\"broken_link(${linkId})\"" }
-
-            /// This link points to a location in this document.
-            else if (processor.currentDocId == link.sourceDocId) {
-                newLink = "href=\"#${linkId}\"" }
-
-            /// The link should point to a different document.
-            else {
-                TargetDoc thisDoc = processor.currentDoc
-                TargetDoc linkDoc = processor.docs[link.sourceDocId]
-
-                String pathToLinkedDoc = processor.getRelativeFilepath(
-                    thisDoc.sourceFile.parentFile,
-                    linkDoc.sourceFile)
-
-                /** The target document may not be in the same directory
-                  * as us, backtrack to the (relative) top of our directory
-                  * structure. */
-                newLink = 'href="' + pathToLinkedDoc + ".html#${linkId}\"" }
-                
-            return newLink }
+        html = html.replaceAll(/href=['"](jlp:\/\/[^\s"']+)['"]/) { match, link->
+            return 'href="' + resolveLink(link) + '"' }
 
         return html; }
+
+    /// Shortcut for `processor.resolveLink(url, processor.currentDoc)`.
+    protected String resolveLink(String url) {
+        processor.resolveLink(url, processor.currentDoc) }
+
 }

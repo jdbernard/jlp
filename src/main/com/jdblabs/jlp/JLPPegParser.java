@@ -277,7 +277,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 swap(),
                 push(popAsString() + ((DocText) pop()).value))),
                 
-            push(new Directive(popAsString(), popAsString(), popAsInt()))); }
+            push(new Directive(popAsString(), popAsString(), popAsInt(),
+                (DocBlock)peek()))); }
 
     /**
      * #### MLongDirective 
@@ -300,7 +301,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 swap(),
                 push(popAsString() + ((DocText) pop()).value))),
 
-            push(new Directive(popAsString(), popAsString(), popAsInt()))); }
+            push(new Directive(popAsString(), popAsString(), popAsInt(),
+                (DocBlock) peek()))); }
 
     /**
      * #### SShortDirective 
@@ -318,7 +320,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             FirstOf(AUTHOR_DIR, ORG_DIR, INCLUDE_DIR, COPYRIGHT_DIR), push(match()),
             RemainingSDocLine(),
             
-            push(new Directive(match().trim(), popAsString(), popAsInt()))); }
+            push(new Directive(match().trim(), popAsString(), popAsInt(),
+                (DocBlock) peek()))); }
 
     /**
      * #### MShortDirective 
@@ -336,7 +339,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             FirstOf(AUTHOR_DIR, ORG_DIR, INCLUDE_DIR, COPYRIGHT_DIR), push(match()),
             RemainingMDocLine(),
 
-            push(new Directive(match().trim(), popAsString(), popAsInt()))); }
+            push(new Directive(match().trim(), popAsString(), popAsInt(),
+                (DocBlock) peek()))); }
 
     /**
      * #### SDocText 
@@ -492,8 +496,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
     boolean addToDocBlock(ASTNode an) {
         DocBlock docBlock = (DocBlock) pop();
         if (an instanceof Directive) {
-            docBlock.directives.add((Directive) an);
-            ((Directive) an).parentBlock = docBlock; }
+            docBlock.directives.add((Directive) an); }
         else if (an instanceof DocText) {
             docBlock.docTexts.add((DocText) an); }
         else { throw new IllegalStateException(); }

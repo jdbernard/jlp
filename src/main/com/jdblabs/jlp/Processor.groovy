@@ -4,6 +4,8 @@
  */
 package com.jdblabs.jlp
 
+import com.jdbernard.util.JarUtils
+import java.util.jar.JarInputStream
 import org.parboiled.BaseParser
 import org.parboiled.Parboiled
 import org.slf4j.Logger
@@ -35,9 +37,9 @@ public class Processor {
     /// The root of the output path.
     public File outputRoot
 
-    /// The CSS that will be used for the resulting HTML documents. Note that
-    /// this is the CSS file contents, not the name of a CSS file.
-    public String css
+    /// The CSS that will be used for the resulting HTML documents. This object
+    /// can be any object that responds to the `text` property.
+    public def css
 
     /// A shortcut for `docs[currentDocId]`
     public TargetDoc currentDoc
@@ -62,7 +64,7 @@ public class Processor {
      * @api Process the input files given, writing the resulting documentation
      * to the directory named in `outputDir`, using the CSS given in `css`
      */
-    public static void process(File outputDir, String css,
+    public static void process(File outputDir, def css,
     List<File> inputFiles) {
 
         /// Find the closest common parent folder to all of the files given.
@@ -91,18 +93,34 @@ public class Processor {
         /// Remember that the data for the processing run was initialized by the
         /// constructor.
 
+        /// * Write the CSS file to our output directory.
+        File cssFile = new File(outputRoot, "css/jlp.css")
+        cssFile.parentFile.mkdirs()
+        cssFile.text = css.text
+
+        /// * Extract the syntax highlighter files to the output directory.
+        File shFile = new File(outputRoot, "temp.jar")
+        getClass().getResourceAsStream("/syntax-highlighter.jar").withStream { is ->
+            shFile.withOutputStream { os ->
+                while (is.available()) { os.write(is.read()) }}}
+        JarUtils.extract(shFile, outputRoot)
+        shFile.delete()
+
         /// * Create the processing context for each input file. We are using
         ///   the relative path of the file as the document id.
         inputFiles.each { file ->
             def docId = getRelativeFilepath(inputRoot, file)
-            docs[docId] = new TargetDoc(sourceFile: file) }
+            docs[docId] = new TargetDoc(
+                sourceDocId: docId,
+                sourceFile: file,
+                sourceType: sourceTypeForFile(file)) }
 
         /// * Run the parse phase on each of the files. For each file, we load
         ///   the parser for that file type and parse the file into an abstract
         ///   syntax tree (AST).
         processDocs {
             log.trace("Parsing '{}'.", currentDocId)
-            def parser = getParser(sourceTypeForFile(currentDoc.sourceFile))
+            def parser = getParser(currentDoc.sourceType)
             // TODO: error detection
             currentDoc.sourceAST = parser.parse(currentDoc.sourceFile.text) }
 
@@ -111,7 +129,7 @@ public class Processor {
         ///   for an explanation of the generator phases).
         processDocs {
             log.trace("Second-pass parsing for '{}'.", currentDocId)
-            def generator = getGenerator(sourceTypeForFile(currentDoc.sourceFile))
+            def generator = getGenerator(currentDoc.sourceType)
             // TODO: error detection
             generator.parse(currentDoc.sourceAST) }
 
@@ -119,7 +137,7 @@ public class Processor {
         /// * Second pass by the generators, the emit phase.
         processDocs {
             log.trace("Emitting documentation for '{}'.", currentDocId)
-            def generator = getGenerator(sourceTypeForFile(currentDoc.sourceFile))
+            def generator = getGenerator(currentDoc.sourceType)
             currentDoc.output = generator.emit(currentDoc.sourceAST) }
 
         /// * Write the output to the output directory.
@@ -137,10 +155,6 @@ public class Processor {
 
             /// Create the directory for this file if it does not exist.
             if (!outputDir.exists()) { outputDir.mkdirs() }
-
-            /// Write the CSS file if it does not exist.
-            File cssFile = new File(outputDir, "jlp.css")
-            if (!cssFile.exists()) { cssFile.withWriter{ it.println css } }
 
             /// Copy the source file over.
             // TODO: make this behavior customizable.
@@ -163,6 +177,67 @@ public class Processor {
             currentDoc = doc
 
             return c() } }
+
+    /***
+     * #### resolveLink
+     * Given a link, resolve it against the current output root.
+     *
+     * If this is a full URL, then we will attempt to resolve it based on the
+     * URL protocol. If this is not a full URL then it will resolve the link
+     * against the output root.
+     *
+     * `jlp://`
+     * :   Resolve the link by looking for a matching link anchor defined
+     *     in the documentation.
+     *
+     * *other protocol*
+     * :   Return the link as-is.
+     *
+     * *absolute path (starts with `/`)*
+     * :   Returns the link resolved directly against the output root.
+     *
+     * *relative path (no leading `/`)*
+     * :   Returns the link resolved against the `TargetDoc` passed in.
+     */
+    public String resolveLink(String link, TargetDoc targetDoc) {
+        switch (link) {
+
+            /// JLP link, let's resolve with a link anchor
+            case ~/^jlp:.*/:
+                /// Get the org data we found in the parse phase for this org id.
+                def m = (link =~ /jlp:\/\/(.+)/)
+                def linkId = m[0][1]
+                def linkAnchor = linkAnchors[m[0][1]]
+
+                if (!linkAnchor) {
+                    // We do not have any reference to this id.
+                    /* TODO: log error */
+                    return "broken_link(${linkId})" }
+
+                /// This link points to a location in this document.
+                else if (targetDoc.sourceDocId == linkAnchor.sourceDocId) {
+                    return "#${linkId}" }
+
+                /// The link should point to a different document.
+                else {
+                    TargetDoc linkDoc = docs[linkAnchor.sourceDocId]
+
+                    String pathToLinkedDoc = getRelativeFilepath(
+                        targetDoc.sourceFile.parentFile, linkDoc.sourceFile)
+
+                    return "${pathToLinkedDoc}.html#${linkId}" }
+
+            /// Other protocol: return as-is.
+            case ~/^\w+:.*/: return link
+
+            /// Absolute link, resolve relative to the output root.
+            case ~/^\/.*/:  return outputRoot.canonicalPath + link
+            
+            /// Relative link, resolve using the output root and the source
+            /// document relative to the input root.
+            default:
+                def relPath = getRelativePath(inputRoot, targetDoc.sourceFile)
+                return "${relPath}/${link}" }}
 
     /**
      * #### getRelativeFilepath
@@ -235,13 +310,30 @@ public class Processor {
         /// Lookup the file type by extension
         switch (extension) {
             case 'c': case 'h': return 'c';
-            case 'c++': case 'h++': case 'cpp': case 'hpp': return 'c++';
+            case 'c++': case 'h++': case 'cpp': case 'hpp': return 'cpp';
             case 'erl': case 'hrl': return 'erlang';
             case 'groovy': return 'groovy';
             case 'java': return 'java';
             case 'js': return 'javascript';
             case 'md': return 'markdown';
+            case 'html': return 'html';
+            case 'xml': case 'xhtml': return 'xml';
             default: return 'unknown'; }}
+
+    /**
+     * #### shBrushForSourceType
+     * Lookup the syntax highlighter brush for the given source type.
+     * @org jlp.jdb-labs.com/Processor/shBrushForSourceType
+     */
+    public static String shBrushForSourceType(String sourceType) {
+        switch (sourceType) {
+            case 'c': case 'cpp': return 'shBrushCpp'
+            case 'erlang': return 'shBrushErlang'
+            case 'groovy': return 'shBrushGroovy'
+            case 'java': return 'shBrushJava'
+            case 'javascript': return 'shBrushJScript'
+            case 'html': case 'xml': return 'shBrushXml'
+            default: return null }}
 
     /**
      * #### getGenerator
@@ -278,8 +370,13 @@ public class Processor {
                 case 'markdown':
                     parsers[sourceType] = new MarkdownParser()
                     break
+                case 'html': case 'xml':
+                    parsers[sourceType] = Parboiled.createParser(
+                        JLPPegParser, '<!--', '-->',
+                        '#$%^&*()_-+=|;:\'",<>?~`', '<<?')
+                    break
                 case 'c':
-                case 'c++':
+                case 'cpp':
                 case 'groovy':
                 case 'java':
                 case 'javascript':

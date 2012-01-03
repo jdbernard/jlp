@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory
  */
 public class JLPMain {
 
-    public static final String VERSION = "1.2"
+    public static final String VERSION = "1.3"
 
     private static Logger log = LoggerFactory.getLogger(JLPMain.class)
 
@@ -79,7 +79,7 @@ public class JLPMain {
 
         /// Get the CSS theme to use. We will start by assuming the default will
         /// be used.
-        def css = JLPMain.class.getResourceAsStream("/jlp.css")
+        def css = JLPMain.class.getResourceAsStream("/css/jlp.css")
 
         /// If the CSS file was specified on the command-line, let's look for it.
         if (opts.'css-file') {
@@ -101,10 +101,6 @@ public class JLPMain {
                 println "WARN: Could not fine the custom CSS file: '" +
                     "${cssFile.canonicalPath}'."
                 println "      Using the default CSS." }}
-
-        /// Extract the text from our css source (either an InputStream or a
-        /// File)
-        css = css.text
 
         /// #### Create the input file list.
 

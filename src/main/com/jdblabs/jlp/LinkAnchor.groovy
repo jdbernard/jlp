@@ -4,7 +4,7 @@
  */
 package com.jdblabs.jlp
 
-import com.jdblabs.jlp.ast.Directive
+import com.jdblabs.jlp.ast.ASTNode
 
 /**
  * A *LinkAnchor* in the documentation is very similar to an HTML anchor. It
@@ -20,10 +20,13 @@ import com.jdblabs.jlp.ast.Directive
  */
 public class LinkAnchor {
 
+    public enum LinkType { OrgLink, FileLink }
+
     /// The anchor id. This comes from the text after the directive.
     public String id
 
-    public Directive directive
+    public LinkType type
+    public ASTNode source
     public String sourceDocId
 
 }

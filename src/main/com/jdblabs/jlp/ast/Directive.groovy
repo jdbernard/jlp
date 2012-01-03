@@ -59,10 +59,12 @@ public class Directive extends ASTNode {
     public final DirectiveType type;
     public final String value;
 
-    public Directive(String value, String typeString, int lineNumber) {
+    public Directive(String value, String typeString, int lineNumber,
+        DocBlock parentBlock) {
         super(lineNumber)
         this.value = value
-        this.type = DirectiveType.parse(typeString) }
+        this.type = DirectiveType.parse(typeString)
+        this.parentBlock = parentBlock }
         
     public String toString() { "[${lineNumber}:Directive: ${type}, ${value}]" }
 }
