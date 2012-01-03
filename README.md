@@ -23,12 +23,12 @@ but was more full-featured. To that end, JLP currently features:
     default settings for several languages. Ultimately I hope to cover most
     of the common programming languages.
 
-This project is in its infancy and some of the larger goals are still unmet:
-
 * *Syntax highligting.*
 
     All code blocks will be highlighted according to the language they are
     written in.
+
+This project is in its infancy and some of the larger goals are still unmet:
 
 * *Code awareness.*
 
@@ -66,13 +66,40 @@ This project is in its infancy and some of the larger goals are still unmet:
 
     The Processor processes one batch of input files to create a set of output files.
     It holds the intermediate state needed by the generators and coordinates the
-    work of the parsers and generators for each of the input files.
+    work of the parsers and generators for each of the input files. This
+    processor only generates HTML documentation and will likely be renamed in
+    the future to reflect this.
+
+* [JLPBaseGenerator](jlp://jlp.jdb-labs.com/JLPBaseGenerator)
+
+    The Generator processes one input file. It parses the AST for the input file
+    and emits the final documentation for the file. JLPBaseGenerator
+    implementations are expected to be tightly coupled to Processor
+    implementations.
+
+* [LiterateMarkdownGenerator](jlp://jlp.jdb-labs.com/LiterateMarkdownGenerator)
+
+    This implemetation of JLPBaseGenerator generates literate-style
+    documentation (as opposed to API-style), using [Markdown] to format the
+    documentation blocks.
+
+    [Markdown]: http://daringfireball.net/projects/markdown/
 
 ## Parsing
 
 * [JLPParser](jlp://jlp.jdb-labs.com/JLPParser)
 
     A very simple interface for parsing JLP input.
+
+* [JLPPegParser](jlp://jlp.jdb-labs.com/JLPPegParser)
+
+    A [PEG parser] implemented using the [parboiled] library. This is the
+    default source code parser. It is able to parse JLP documentation but leaves
+    code unparsed. It can be parameterized to fit the differing documentation
+    styles of source languages.
+
+    [PEG parser]: http://en.wikipedia.org/wiki/Parsing_expression_grammar
+    [parboiled]:  http://www.parboiled.org
 
 ## Abstract Syntax Tree
 

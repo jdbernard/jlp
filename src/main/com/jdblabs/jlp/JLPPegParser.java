@@ -90,7 +90,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      * Pushes a [`SourceFile`] node on the stack.
      *
-     * [`SourceFile`}: jlp://jlp.jdb-labs.com/ast/SourceFile
+     * [`SourceFile`]: jlp://jlp.jdb-labs.com/ast/SourceFile
      */
     public Rule SourceFile() {
         return Sequence(

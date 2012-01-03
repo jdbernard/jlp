@@ -21,34 +21,43 @@ ul {
     margin: 0;
     padding-top: 0; }
 
-#container { position: relative; }
+#container {
+    background-color: white;
+    border-left: thin solid #aaa;
+    border-right: thin solid #aaa;
+    min-width: 600px;
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0;
+    padding: 1rem;
+    position: relative; }
 
-table td {
-    border: 0;
-    outline: 0; }
-
-td.docs, th.docs {
+.jlp-docs {
+    color: #464;
     max-width: 600px;
-    min-width: 450px;
-    min-height: 5pc;
-    padding: 10px 25px 1px 50px;
-    overflow-x: hidden;
-    vertical-align: top;
-    text-align: left; }
+    margin-top: 0.5rem; }
 
-.docs pre {
+.jlp-code {
+    margin-top: -1rem;}
+
+.jlp-docs pre {
     background: #f8f8ff;
     border: 1px solid #dedede;
     margin: 15px 0 15px;
     padding-left: 15px; }
 
-.docs tt, .docs code {
+.jlp-docs tt, .jlp-docs code {
     background: #f8f8ff;
     border: 1px solid #dedede;
     font-size: 12px;
     padding: 0 0.2em; }
 
-.docs table {
+/* No border for code tags already inside pre tags. */
+.jlp-docs pre > code {
+    border: 0; }
+
+.jlp-docs table {
     border: thin solid #dedede;
     margin-left: 60px; }
 
