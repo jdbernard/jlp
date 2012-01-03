@@ -88,7 +88,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     SourceFile = (Block / DocBlock / CodeBlock)+
      *
-     * Pushes a SourceFile node on the stack.
+     * Pushes a [`SourceFile`] node on the stack.
+     *
+     * [`SourceFile`}: jlp://jlp.jdb-labs.com/ast/SourceFile
      */
     public Rule SourceFile() {
         return Sequence(
@@ -160,7 +162,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     Block = DocBlock CodeBlock
      *
-     * Pushes a Block onto the stack
+     * Pushes a [`Block`] onto the stack.
+     *
+     * [`Block`]: jlp://jlp.jdb-labs.com/ast/Block
      */
     Rule Block() {
         return Sequence(
@@ -178,7 +182,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     DocBlock = SDocBlock / MDocBlock
      *
-     * Pushes a DocBlock onto the stack.
+     * Pushes a [`DocBlock`] onto the stack.
+     *
+     * [`DocBlock`]: jlp://jlp.jdb-labs.com/ast/DocBlock
      */
     Rule DocBlock() { return FirstOf(SDocBlock(), MDocBlock()); }
 
@@ -188,7 +194,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     SDocBlock = (SDirective / SDocText)+
      *
-     * Pushes a DocBlock object onto the stack
+     * Pushes a [`DocBlock`] onto the stack.
+     *
+     * [`DocBlock`]: jlp://jlp.jdb-labs.com/ast/DocBlock
      */
     Rule SDocBlock() {
         return Sequence(
@@ -203,7 +211,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     MDocBlock = MDOC_START (MDirective / MDocText)+ MDOC_END
      *
-     * Pushes a DocBlock object onto the stack
+     * Pushes a [`DocBlock`] onto the stack.
+     *
+     * [`DocBlock`]: jlp://jlp.jdb-labs.com/ast/DocBlock
      */
     Rule MDocBlock() {
         return Sequence(
@@ -223,7 +233,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     CodeBlock = (RemainingCodeLine)+
      *
-     * Pushes a CodeBlock onto the stack.
+     * Pushes a [`CodeBlock`] onto the stack.
+     *
+     * [`CodeBlock`]: jlp://jlp.jdb-labs.com/ast/CodeBlock
      */
     Rule CodeBlock() {
         return Sequence(
@@ -237,7 +249,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     SDirective = SDocLineStart AT (SLongDirective / SShortDirective)
      *
-     * Pushes a Directive node on the stack.
+     * Pushes a [`Directive`] node on the stack.
+     *
+     * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
      */
     Rule SDirective() {
         return Sequence(
@@ -249,7 +263,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     MDirective = MDocLineStart? AT (MLongDirective / MShortDirective)
      *
-     * Pushes a Directive node onto the stack.
+     * Pushes a [`Directive`] node onto the stack.
+     *
+     * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
      */
     Rule MDirective() {
         return Sequence(
@@ -263,7 +279,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *     SLongDirective =
      *      (API_DIR / EXAMPLE_DIR) RemainingSDocLine SDocText?
      *
-     * Pushes a Directive node onto the stack.
+     * Pushes a [`Directive`] node onto the stack.
+     *
+     * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
      */
     Rule SLongDirective() {
         return Sequence(
@@ -287,7 +305,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *     MLongDirective = 
      *      (API_DIR / EXAMPLE_DIR) RemainingMDocLine MDocText?
      *
-     * Pushes a Directive node onto the stack.
+     * Pushes a [`Directive`] node onto the stack.
+     *
+     * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
      */
     Rule MLongDirective() {
         return Sequence(
@@ -312,7 +332,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *       (AUTHOR_DIR / ORG_DIR / INCLUDE_DIR / COPYRIGHT_DIR)
      *       RemainingSDocLine
      *
-     * Pushes a Directive node onto the stack.
+     * Pushes a [`Directive`] node onto the stack.
+     *
+     * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
      */
     Rule SShortDirective() {
         return Sequence(
@@ -331,7 +353,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *       (AUTHOR_DIR / ORG_DIR / INCLUDE_DIR / COPYRIGHT_DIR)
      *       RemainingMDocLine
      *
-     * Pushes a Directive node onto the stack.
+     * Pushes a [`Directive`] node onto the stack.
+     *
+     * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
      */
     Rule MShortDirective() {
         return Sequence(
@@ -348,7 +372,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     SDocText = (SDocLineStart !AT RemainingSDocLine)+
      *
-     * Pushes a DocText node onto the stack.
+     * Pushes a [`DocText`] node onto the stack.
+     *
+     * [`DocText`]: jlp://jlp.jdb-labs.com/ast/DocText
      */
     Rule SDocText() {
         return Sequence(
@@ -363,7 +389,9 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      *
      *     MDocText = (MDocLineStart? !AT RemainingMDocLine)+
      *
-     * Pushes a DocText node onto the stack.
+     * Pushes a [`DocText`] node onto the stack.
+     *
+     * [`DocText`]: jlp://jlp.jdb-labs.com/ast/DocText
      */
     Rule MDocText() {
         return Sequence(
@@ -481,8 +509,10 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * #### addToDocBlock
-     * Add the given block to the SourceFile node expected to be at the top of
+     * Add the given block to the [`SourceFile`] node expected to be at the top of
      * the parser value stack.
+     *
+     * [`SourceFile`]: jlp://jlp.jdb-labs.com/ast/SourceFile
      */
     boolean addBlockToSourceFile(Block block) {
         ((SourceFile) peek()).blocks.add(block);
@@ -490,8 +520,12 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * #### addToDocBlock
-     * Add the given Directive or DocText to the DocBlock expected to be at the
+     * Add the given [`Directive`] or [`DocText`] to the [`DocBlock`] expected to be at the
      * top of the parser value stack.
+     *
+     * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
+     * [`DocText`]: jlp://jlp.jdb-labs.com/ast/DocText
+     * [`DocBlock`]: jlp://jlp.jdb-labs.com/ast/DocBlock
      */
     boolean addToDocBlock(ASTNode an) {
         DocBlock docBlock = (DocBlock) pop();

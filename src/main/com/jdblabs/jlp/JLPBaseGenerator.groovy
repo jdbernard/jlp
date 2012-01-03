@@ -16,7 +16,7 @@ import java.util.Map
 public abstract class JLPBaseGenerator {
 
     /**
-     * The generator works in close conjunction with the JLP Processor.
+     * The generator works in close conjunction with a JLP Processor.
      * This tight coupling in intended for these two classes. The distiction
      * between the two classes is scope. The Processor class is concerned with
      * data and behavior common to the whole documentation process whereas the
@@ -39,14 +39,16 @@ public abstract class JLPBaseGenerator {
      *
      * The **parse** phase allows the Generator to build up facts about the
      * file being processed before emitting the documentation in the **emit**
-     * phase. There is a `parse` method for each `ASTNode` type. The default
+     * phase. There is a `parse` method for each [`ASTNode`] type. The default
      * implementation for JLPBaseGenerator calls the `parse` methods in such a
-     * way that it visits each ASTNode in the file.
+     * way that it visits each `ASTNode` in the file.
      *
      * The **emit** phase is where the Generator creates the documentation for
-     * each AST node. Unlike the parse phase, there is no default implementation
+     * each `ASTNode`. Unlike the parse phase, there is no default implementation
      * for the emit phase as emitting the final result will be very dependant on
      * the emitter.
+     *
+     * [`ASTNode`]: jlp://jlp.jdb-labs.com/ast/ASTNode
      *
      * @org com.jdb-labs.jlp.JLPBaseGenerator/phases
      */

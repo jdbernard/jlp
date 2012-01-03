@@ -8,7 +8,7 @@ package com.jdblabs.jlp.ast
 import java.util.Map
 
 /**
- * @api ASTNode for *CodeBlock*s.
+ * @api ASTNode for `CodeBlocks`.
  * @org jlp.jdb-labs.com/ast/CodeBlock
  */
 public class CodeBlock extends ASTNode {

@@ -8,7 +8,7 @@ import java.util.ArrayList
 import java.util.List
 
 /**
- * @api ASTNode for *DocBlock*s.
+ * @api ASTNode for `DocBlocks`.
  * @org jlp.jdb-labs.com/ast/DocBlock
  */
 public class DocBlock extends ASTNode {

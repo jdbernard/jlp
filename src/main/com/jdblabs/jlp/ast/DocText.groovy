@@ -5,7 +5,7 @@
 package com.jdblabs.jlp.ast
 
 /**
- * @api ASTNode for *DocText*s.
+ * @api ASTNode for `DocTexts`.
  * @org jlp.jdb-labs.com/ast/DocText
  */
 public class DocText extends ASTNode {

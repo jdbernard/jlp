@@ -25,20 +25,38 @@ public class JLPMain {
     public static void main(String[] args) {
 
         /// #### Define command-line options.
-        /// We are using the Groovy wrapper around the Apache Commons CLI
-        /// library.
+        /// We are using Groovy's [CliBuilder] (a wrapper around the Apache
+        /// Commons library).
+        ///
+        /// [CliBuilder]: http://groovy.codehaus.org/gapi/groovy/util/CliBuilder.html
         CliBuilder cli = new CliBuilder(
             usage: 'jlp [options] <src-file> <src-file> ...')
 
-        // define options
+        /// -h, --help
+        /// :   Print help information.
         cli.h('Print this help information.', longOpt: 'help', required: false)
+
+        /// -o, --outputdir
+        /// :   Set the output directory where the documentation will be
+        ///     written.
         cli.o("Output directory (defaults to 'jlp-docs').",
             longOpt: 'output-dir', args: 1, argName: "output-dir",
             required: false)
+
+        /// --css-file
+        /// :   Specify an alternate CSS file for the output documentation.
         cli._('Use <css-file> for the documentation css.',
             longOpt: 'css-file', args: 1, required: false, argName: 'css-file')
+
+        /// --relative-path-root
+        /// :   Override the current working directory. This is useful if you
+        ///     are invoking jlp remotely, or if the current working directory
+        ///     is incorrectly set by the executing environment.
         cli._(longOpt: 'relative-path-root', args: 1, required: false,
             'Resolve all relative paths against this root.')
+
+        /// --version
+        /// :   Display JLP versioning information.
         cli._(longOpt: 'version', 'Display the JLP version information.')
 
         /// #### Parse the options.

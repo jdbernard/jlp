@@ -5,7 +5,7 @@
 package com.jdblabs.jlp.ast
 
 /**
- * @api ASTNode for *Directive*s.
+ * @api ASTNode for `Directives`.
  * A documentation directive allows the author to add metadata and processing
  * instructions.
  * @org jlp.jdb-labs.com/ast/Directive
@@ -46,8 +46,10 @@ public class Directive extends ASTNode {
      * Org
      * :   Used to create a link anchor in the documentation. The `jlp` protocol
      *     in a URL allows the author to link back to a link anchor. Refer to
-     *     the [LinkAnchor](jlp://jlp.jdb-labs.com/LinkAnchor) documentation for
-     *     more information about link anchors.
+     *     the [`LinkAnchor`] documentation for more information about link
+     *     anchors.
+     *
+     * [`LinkAnchor`]: jlp://jlp.jdb-labs.com/LinkAnchor
      */
     public static enum DirectiveType {
         Api, Author, Copyright, Example, Include, Org;

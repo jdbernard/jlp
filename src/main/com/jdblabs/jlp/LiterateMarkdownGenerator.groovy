@@ -15,14 +15,17 @@ import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4 as escape
 import java.util.List
 
 /**
- * The LiterateMarkdownGenerator is an implementation of JLPBaseGenerator that
- * uses [Markdown](http://daringfireball.net/projects/markdown/) to process the
- * documentation into HTML output.
+ * The LiterateMarkdownGenerator is an implementation of [`JLPBaseGenerator`]
+ * that uses [Markdown] to process the documentation into HTML output.
+ *
+ * [`JLPBaseGenerator`]: jlp://jlp.jdb-labs.com/JLPBaseGenerator
+ * [Markdown]: http://daringfireball.net/projects/markdown/
  * @org jlp.jdb-labs.com/LiterateMarkdownGenerator
  */
 public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
-    /// We will use the PegDown library for generating the Markdown output.
+    /// We will use the [PegDown](https://github.com/sirthias/pegdown) library
+    /// for generating the Markdown output.
     protected PegDownProcessor pegdown
 
     public LiterateMarkdownGenerator(Processor processor) {
@@ -35,9 +38,12 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
     /** ### Parse phase implementation. ###  */
     //  ===================================
 
-    /** Implement the parse phase for *Directive* nodes. We are interested
+    /** Implement the parse phase for [`Directive`] nodes. We are interested
       * specifically in saving the link anchor information from *org*
-      * directives. */
+      * directives.
+      *
+      * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
+      */
     protected void parse(Directive directive) {
         switch(directive.type) {
             case DirectiveType.Org:
@@ -52,8 +58,13 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
                 break // do nothing
             } }
 
-    /** We are not doing any parsing for *CodeBlocks* or *DocTexts*. We have to
-      * implement them, as they are abstract on JLPBaseGenerator. */
+    /** We are not doing any parsing for [`CodeBlocks`] or [`DocTexts`]. We
+      * have to implement them, as they are abstract on [`JLPBaseGenerator`].
+      *
+      * [`CodeBlocks`]: jlp://jlp.jdb-labs.com/ast/CodeBlock
+      * [`DocTexts`]: jlp://jlp.jdb-labs.com/ast/DocText
+      * [`JLPBaseGenerator`]: jlp://jlp.jdb-labs.com/JLPBaseGenerator
+      */
     protected void parse(CodeBlock codeBlock) {} // nothing to do
     protected void parse(DocText docText) {} // nothing to do
 
@@ -61,9 +72,12 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
     /** ### Emit phase implementation. ###  */
     //  ==================================
 
-    /** @api Emit a *SourceFile*.
-      * Each *SourceFile* becomes one ouput HTML file. This method is the entry
-      * point for a file to be emitted. */
+    /** @api Emit a [`SourceFile`].
+      * Each [`SourceFile`] becomes one ouput HTML file. This method is the
+      * entry point for a file to be emitted.
+      *
+      * [`SourceFile`]: jlp://jlp.jdb-labs.com/ast/SourceFile
+      */
     protected String emit(SourceFile sourceFile) {
         StringBuilder sb = new StringBuilder()
 
@@ -125,7 +139,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
         return sb.toString() }
 
-    /** @api Emit a *Block*. */
+    /** @api Emit a [`Block`](jlp://jlp.jdb-labs.com/ast/Block). */
     protected String emit(Block block) {
         StringBuilder sb = new StringBuilder()
 
@@ -153,7 +167,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         /// Close the table row.
         sb.append('</tr>') }
 
-    /** @api Emit a *DocBlock*. */
+    /** @api Emit a [`DocBlock`](jlp://jlp/jdb-labs.com/ast/DocBlock). */
     protected String emit(DocBlock docBlock) {
         /// Create a queue for the doc block elements, we are going to 
         /// sort them by type and line number
@@ -199,7 +213,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         return processMarkdown(sb.toString())
     }
 
-    /** @api Emit a *CodeBlock*. */
+    /** @api Emit a [`CodeBlock`](jlp://jlp.jdb-labs.com/ast/CodeBlock). */
     protected String emit(CodeBlock codeBlock) {
         def codeLines
 
@@ -216,10 +230,10 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         return "<pre class=\"brush: ${processor.currentDoc.sourceType};\">" +
             "${escape(codeLines.join(''))}</pre>" }
 
-    /** @api Emit a *DocText*. */
+    /** @api Emit a [`DocText`](jlp://jlp.jdb-labs.com/ast/DocText). */
     protected String emit(DocText docText) { return docText.value }
 
-    /** @api Emit a *Directive*. */
+    /** @api Emit a [`Directive`](jlp://jlp.jdb-labs.com/ast/Directive). */
     protected String emit(Directive directive) {
         switch(directive.type) {
 
@@ -264,7 +278,9 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
 
         return html; }
 
-    /// Shortcut for `processor.resolveLink(url, processor.currentDoc)`.
+    /// Shortcut for [`processor.resolveLink(url, processor.currentDoc)`][RL].
+    ///
+    /// [RL]: jlp://jlp.jdb-labs.com/Processor/resolveLink
     protected String resolveLink(String url) {
         processor.resolveLink(url, processor.currentDoc) }
 
