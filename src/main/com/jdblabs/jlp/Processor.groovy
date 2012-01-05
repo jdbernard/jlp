@@ -194,7 +194,7 @@ public class Processor {
      * :   Return the link as-is.
      *
      * *absolute path (starts with `/`)*
-     * :   Returns the link resolved directly against the output root.
+     * :   Returns the link resolved against the output root. 
      *
      * *relative path (no leading `/`)*
      * :   Returns the link resolved against the `TargetDoc` passed in.
@@ -233,12 +233,16 @@ public class Processor {
             case ~/^\w+:.*/: return link
 
             /// Absolute link, resolve relative to the output root.
-            case ~/^\/.*/:  return outputRoot.canonicalPath + link
+            case ~/^\/.*/: 
+                /// Our link should be the relative path (if needed) plus the
+                /// link without the leading `/`.
+                def relPath = getRelativeFilepath(targetDoc.sourceFile, inputRoot)
+                return (relPath ? "${relPath}/" : "") + link[1..-1]
             
             /// Relative link, resolve using the output root and the source
             /// document relative to the input root.
             default:
-                def relPath = getRelativePath(inputRoot, targetDoc.sourceFile)
+                def relPath = getRelativeFilepath(inputRoot, targetDoc.sourceFile)
                 return "${relPath}/${link}" }}
 
     /**

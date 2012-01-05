@@ -120,10 +120,6 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
     <body>
         <div id="container">
             <table cellpadding="0" cellspacing="0">
-                <thead><tr>
-                    <th class="docs"><h1>${escape(processor.currentDocId)}</h1></th>
-                    <th class="code"/>
-                </tr></thead>
                 <tbody>""")
 
         /// Emit all of the blocks in the body of the html file.
@@ -179,17 +175,20 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         /** Add all the directives. We are also assigning priorities here that
           * we will use along with the line numbers to sort the elements. Our
           * goal is to preserve the order of doc blocks and doc-block-like
-          * elements (examples, api documentation, etc.) while pushing orgs,
-          * authorship and other directives to the top. */
+          * elements (examples, api documentation, etc.) while pushing orgs
+          * and potentially other directives to the top. We used to re-order
+          * authorship and copyright tags but stopped: in literate-style docs
+          * the author should have control over their placement and in api-style
+          * docs we are chopping the whole block up anyways (and this is not
+          * that code). Given that the only item being re-ordered is *orgs*,
+          * which do not print anyways, it may be better to cut this out and
+          * just emit the blocks in their original order, or sort by line number
+          * only. */
         emitQueue = docBlock.directives.collect { directive ->
             def queueItem = [lineNumber: directive.lineNumber, value: directive]
             switch(directive.type) {
-                case DirectiveType.Api:         queueItem.priority = 50; break
-                case DirectiveType.Author:      queueItem.priority = 10; break
-                case DirectiveType.Copyright:   queueItem.priority = 11; break
-                case DirectiveType.Example:     queueItem.priority = 50; break
-                case DirectiveType.Include:     queueItem.priority = 50; break
-                case DirectiveType.Org:         queueItem.priority =  0; break }
+                case DirectiveType.Org:         queueItem.priority =  0; break
+                default:                        queueItem.priority = 50; break }
             
             return queueItem }
 

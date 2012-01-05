@@ -1,0 +1,12 @@
+Add a `title` directive for titling documents.
+==============================================
+
+Return to defaulting a title for each document. Instead of the internal document id use
+something more reasonable, like the filename without the path and without the extension.
+A new attribute `title` could allow the author to override this value.
+
+----
+
+======== ===================
+Created: 2012-01-04T17:14:26
+======== ===================

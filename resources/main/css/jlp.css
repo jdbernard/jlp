@@ -45,7 +45,6 @@ td.docs, th.docs {
 .docs tt, .docs code {
     background: #f8f8ff;
     border: 1px solid #dedede;
-    font-size: 12px;
     padding: 0 0.2em; }
 
 .docs table {
@@ -60,7 +59,6 @@ td.code, th.code {
     font-size: 14px; }
 
 pre, tt, code {
-    font-size: 12px;
     line-height: 18px;
     font-family: Menlo, Monaco, Consolas, "Lucida Console", monospace;
     margin: 0; padding: 0; }
