@@ -15,6 +15,12 @@ h1, h2, h3, h4, h5, h6 { margin: 0 0 15px 0; }
 
 h1 { margin-top: 40px; }
 
+hr {
+    background-color: black;
+    color: black;
+    border: none;
+    height: 1px; }
+
 dt { font-weight: bold; }
 
 ul {
@@ -36,16 +42,16 @@ td.docs, th.docs {
     vertical-align: top;
     text-align: left; }
 
-.docs pre {
-    background: #f8f8ff;
-    border: 1px solid #dedede;
-    margin: 15px 0 15px;
-    padding-left: 15px; }
-
-.docs tt, .docs code {
+.docs tt, .docs code, .docs pre {
     background: #f8f8ff;
     border: 1px solid #dedede;
     padding: 0 0.2em; }
+
+.docs pre {
+    margin: 15px 0 15px;
+    padding-left: 15px; }
+
+.docs pre > code { border: none; }
 
 .docs table {
     border: thin solid #dedede;

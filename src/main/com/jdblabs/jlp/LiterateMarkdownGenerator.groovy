@@ -5,6 +5,7 @@
 package com.jdblabs.jlp
 
 import com.jdblabs.jlp.ast.*
+import com.jdblabs.jlp.LinkAnchor.LinkType
 import com.jdblabs.jlp.ast.Directive.DirectiveType
 
 import org.pegdown.Extensions
@@ -37,6 +38,56 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
     //  ===================================
     /** ### Parse phase implementation. ###  */
     //  ===================================
+
+    /** Override the parse phase for [`SourceFile`] nodes. We are interested in
+      * detecting an `org` directive in the first DocBlock, or automatically
+      * creating one if it is not defined. The first `org` directive (found or
+      * created) will create a FileLink type LinkAnchor.
+      */
+
+    protected void parse(SourceFile sourceFile) {
+        /// First we look for an `org` directive in the first block.
+        def firstOrg = sourceFile.blocks[0].docBlock.directives.find {
+            it.type == DirectiveType.Org }
+
+        /// And we create one if there are none.
+        if (!firstOrg) {
+            def docBlock = sourceFile.blocks[0].docBlock
+            firstOrg = new Directive(processor.currentDocId, 'org', 0, docBlock)
+            docBlock.directives << firstOrg }
+
+        /// Now parse the file as usual.
+        super.parse(sourceFile)
+
+        /// And mark the first `org` as a FileLink
+        processor.linkAnchors[firstOrg.value].type = LinkType.FileLink}
+
+    /** Override the parse phase for [`DocBlock`] nodes. We are interested in
+      * detecting a block that has multilple `org` directives. When there are
+      * multiple org directives in one block we change the LinkAnchor type from
+      * block-level links to specific anchors in the text. This allows the
+      * author to create a link to exact points within the document.
+      *
+      * [`DocBlock`]: jlp://jlp.jdb-labs.com/ast/DocBlock
+      */
+    protected void parse(DocBlock docBlock) {
+        /// First parse the block as usual.
+        super.parse(docBlock)
+
+        /// Look for multiple `org` directives.
+        def orgDirectives = docBlock.directives.findAll {it.type == DirectiveType.Org }
+
+        /// If we have multiple `org` directives in one [`DocBlock`] then we
+        /// want to change the corresponding [`LinkAnchors`] to type
+        /// `AnchorType`.
+        ///
+        /// [`DocBlock`]: jlp://jlp.jdb-labs.com/ast/DocBlock
+        /// [`LinkAnchors`]: jlp://jlp.jdb-labs.com/LinkAnchor
+        if (orgDirectives.size() > 1) {
+            orgDirectives.each { directive ->
+                /// Get the LinkAnchor for this `org` link.
+                def linkAnchor = processor.linkAnchors[directive.value]
+                linkAnchor.type = LinkType.InlineLink }}}
 
     /** Implement the parse phase for [`Directive`] nodes. We are interested
       * specifically in saving the link anchor information from *org*
@@ -139,10 +190,12 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
     protected String emit(Block block) {
         StringBuilder sb = new StringBuilder()
 
-        /// Look for an `@org` directive in the `Block` (already found in the
-        /// parse phase)..
-        Directive orgDir = block.docBlock.directives.find {
-            it.type == DirectiveType.Org }
+        /// Look for an `@org` directive in the `Block` that is marked as a
+        /// block link (we may have many `orgs` in a block that are not block
+        /// links).
+        Directive orgDir = block.docBlock.directives.find { directive ->
+            directive.type == DirectiveType.Org &&
+            processor.linkAnchors[directive.value]?.type == LinkType.BlockLink }
 
         /// Create the `tr` that will hold the `Block`. If we found an `@org`
         /// directive we will add the id here.
@@ -172,42 +225,15 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         /// Later we will need a string builder to hold our result.
         StringBuilder sb
 
-        /** Add all the directives. We are also assigning priorities here that
-          * we will use along with the line numbers to sort the elements. Our
-          * goal is to preserve the order of doc blocks and doc-block-like
-          * elements (examples, api documentation, etc.) while pushing orgs
-          * and potentially other directives to the top. We used to re-order
-          * authorship and copyright tags but stopped: in literate-style docs
-          * the author should have control over their placement and in api-style
-          * docs we are chopping the whole block up anyways (and this is not
-          * that code). Given that the only item being re-ordered is *orgs*,
-          * which do not print anyways, it may be better to cut this out and
-          * just emit the blocks in their original order, or sort by line number
-          * only. */
-        emitQueue = docBlock.directives.collect { directive ->
-            def queueItem = [lineNumber: directive.lineNumber, value: directive]
-            switch(directive.type) {
-                case DirectiveType.Org:         queueItem.priority =  0; break
-                default:                        queueItem.priority = 50; break }
-            
-            return queueItem }
-
-        /// Add all the doc text blocks.
-        emitQueue.addAll(docBlock.docTexts.collect { docText ->
-            [lineNumber: docText.lineNumber, priority: 50, value: docText] })
-                        
-
-        /// Sort the emit queue by priority, then line number.
-        emitQueue.sort(
-            {i1, i2 -> i1.priority != i2.priority ?
-                        i1.priority - i2.priority :
-                        i1.lineNumber - i2.lineNumber} as Comparator)
+        /** We want to treat the whole block as one markdown chunk so we will
+          * concatenate the directives and texts and send the whole block at
+          * once to the markdown processor.
+          */
+        emitQueue = docBlock.directives + docBlock.docTexts
+        emitQueue.sort { it.lineNumber }
     
-        /** Finally, we want to treat the whole block as one markdown chunk so
-          * we will concatenate the values in the emit queue and then send the
-          * whole block at once to the markdown processor. */
         sb = new StringBuilder()
-        emitQueue.each { queueItem -> sb.append(emit(queueItem.value)) } 
+        emitQueue.each { queueItem -> sb.append(emit(queueItem)) } 
 
         return processMarkdown(sb.toString())
     }
@@ -244,7 +270,6 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
                     processMarkdown(directive.value) + "</div>\n"
 
             /// `@author` directive is turned into a definition list.
-
             case DirectiveType.Author:
                 return "Author\n:   ${directive.value}\n"
 
@@ -258,9 +283,15 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
             // TODO:
             // case DirectiveType.Include:
 
-            /// An `@org` directive is ignored here. We already emitted the id
-            /// when we started the block.
-            case DirectiveType.Org: return "" } }
+            /// An `@org` directive may be emitted if the [`LinkAnchor`] is an
+            /// `InlineLink` type.
+            ///
+            /// [`LinkAnchor`]: jlp://jlp.jdb-labs.com/LinkAnchor
+            case DirectiveType.Org: 
+                def link = processor.linkAnchors[directive.value]
+                if (link.type == LinkType.InlineLink) {
+                    return "<a id='${directive.value}'></a>\n" }
+                else { return "" }}}
 
     /** This is a helper method to process a block of text as Markdown. We need
       * to do some additional processing to deal with `jlp://` org links that

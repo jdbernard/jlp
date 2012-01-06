@@ -4,6 +4,7 @@
  */
 package com.jdblabs.jlp
 
+import com.jdblabs.jlp.LinkAnchor.LinkType
 import com.jdbernard.util.JarUtils
 import java.util.jar.JarInputStream
 import org.parboiled.BaseParser
@@ -213,11 +214,15 @@ public class Processor {
 
                 if (!linkAnchor) {
                     // We do not have any reference to this id.
-                    /* TODO: log error */
+                    log.warn("Unable to resolve a jlp link: {}.", link)
                     return "broken_link(${linkId})" }
 
+                /// If this is a `FileLink` then we do not need the actual
+                /// linkId, just the file being linked to.
+                if (linkAnchor.type == LinkType.FileLink) { linkId = "" }
+
                 /// This link points to a location in this document.
-                else if (targetDoc.sourceDocId == linkAnchor.sourceDocId) {
+                if (targetDoc.sourceDocId == linkAnchor.sourceDocId) {
                     return "#${linkId}" }
 
                 /// The link should point to a different document.

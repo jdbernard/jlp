@@ -20,12 +20,12 @@ import com.jdblabs.jlp.ast.ASTNode
  */
 public class LinkAnchor {
 
-    public enum LinkType { OrgLink, FileLink }
+    public enum LinkType { InlineLink, BlockLink, FileLink }
 
     /// The anchor id. This comes from the text after the directive.
     public String id
 
-    public LinkType type
+    public LinkType type = LinkType.BlockLink
     public ASTNode source
     public String sourceDocId
 

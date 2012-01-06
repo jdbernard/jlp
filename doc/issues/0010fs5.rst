@@ -1,0 +1,18 @@
+Modify `org` behavior to include simple anchors.
+================================================
+
+Currently JLP supports at most one `org` directive per block which identifies the block.
+It would be useful to support multiple `org` directives within a block, particularly
+when there is a large block that may have many interesting internal targets. Maybe the
+`org` directive should be handled differently when it is used multiple times within a
+block. This would be discovered in the generator parse phase and we could change the
+LinkAnchor type at that time. During the parse phase we emit the new type of anchors
+as `<a id="link-name"/>` into the document. We would also change our search for block
+ids to inly look for the single-occurance type of `orgs`.
+
+----
+
+========= ===================
+Created : 2012-01-05T11:40:35
+Resolved: 2012-01-06T14:32:46
+========= ===================
