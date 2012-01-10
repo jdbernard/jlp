@@ -1,6 +1,7 @@
 /**
+ * # CodeBlock
  * @author Jonathan Bernard (jdb@jdb-labs.com)
- * @copyright JDB Labs 2010-2011
+ * @copyright 2011-2012 [JDB Labs LLC](http://jdb-labs.com)
  * @org jlp.jdb-labs.com/ast/CodeBlock
  */
 package com.jdblabs.jlp.ast

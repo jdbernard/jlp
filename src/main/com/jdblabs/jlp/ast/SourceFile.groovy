@@ -1,6 +1,7 @@
 /**
- * @author Jonathan Bernard
- * @copyright JDB Labs 2010-2011
+ * # SourceFile
+ * @author Jonathan Bernard (jdb@jdb-labs.com)
+ * @copyright 2011-2012 [JDB Labs LLC](http://jdb-labs.com)
  */
 package com.jdblabs.jlp.ast
 

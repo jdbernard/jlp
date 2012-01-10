@@ -1,6 +1,7 @@
 /**
- * @author Jonathan Bernard
- * @copyright JDB Labs 2010-2011
+ * # Processor
+ * @author Jonathan Bernard (jdb@jdb-labs.com)
+ * @copyright 2011-2012 [JDB Labs LLC](http://jdb-labs.com)
  */
 package com.jdblabs.jlp
 
@@ -108,9 +109,26 @@ public class Processor {
         shFile.delete()
 
         /// * Create the processing context for each input file. We are using
-        ///   the relative path of the file as the document id.
+        ///   the name of the file (including the extension) as the id. If there
+        ///   is more than one file with the same name we will include the
+        ///   file's parent directory as well.
         inputFiles.each { file ->
-            def docId = getRelativeFilepath(inputRoot, file)
+            
+            // Get the relative path as path elements.
+            def relPath = getRelativeFilepath(inputRoot, file)
+            def pathParts = relPath.split('/') as List
+
+            // Start with just the file name.
+            def docId = pathParts.pop()
+
+            log.trace("New target document: '{}' from source: '{}'",
+                docId, relPath)
+
+            // As long as the current id is taken, add the next parent directory
+            // to the id.
+            while(docs[docId] != null) { docId = pathParts.pop() + '/' + docId }
+
+            // Finally create the TargetDoc item.
             docs[docId] = new TargetDoc(
                 sourceDocId: docId,
                 sourceFile: file,

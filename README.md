@@ -1,4 +1,6 @@
-# Overview
+# J Literate Programming
+
+## Overview
 *Jonathan's Literate Programming* is my take on literate programming.
 This project grew out of a desire for a documentation system that:
 
@@ -53,9 +55,9 @@ This project is in its infancy and some of the larger goals are still unmet:
     JLP processing directives would allow the author to specify which is
     intended on a file (or block?) level.
 
-# Project Architecture
+## Project Architecture
 
-## Control and Flow
+### Control and Flow
 
 * [JLPMain](jlp://jlp.jdb-labs.com/JLPMain)
 
@@ -85,7 +87,7 @@ This project is in its infancy and some of the larger goals are still unmet:
 
     [Markdown]: http://daringfireball.net/projects/markdown/
 
-## Parsing
+### Parsing
 
 * [JLPParser](jlp://jlp.jdb-labs.com/JLPParser)
 
@@ -101,7 +103,7 @@ This project is in its infancy and some of the larger goals are still unmet:
     [PEG parser]: http://en.wikipedia.org/wiki/Parsing_expression_grammar
     [parboiled]:  http://www.parboiled.org
 
-## Abstract Syntax Tree
+### Abstract Syntax Tree
 
 * [SourceFile](jlp://jlp.jdb-labs.com/ast/SourceFile)
 

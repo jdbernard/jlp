@@ -1,6 +1,7 @@
 /**
+ * # LiterateMarkdownGenerator
  * @author Jonathan Bernard (jdb@jdb-labs.com)
- * @copyright JDB Labs 2010-2011
+ * @copyright 2011-2012 [JDB Labs LLC](http://jdb-labs.com)
  */
 package com.jdblabs.jlp
 

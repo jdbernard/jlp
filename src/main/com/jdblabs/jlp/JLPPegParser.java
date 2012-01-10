@@ -1,3 +1,9 @@
+/**
+ * # JLPPegParser
+ * @author Jonathan Bernard (jdb@jdb-labs.com)
+ * @copyright 2011-2012 [JDB Labs LLC](http://jdb-labs.com)
+ * @org jlp.jdb-labs.com/JLPPegParser
+ */
 package com.jdblabs.jlp;
 
 import com.jdblabs.jlp.ast.*;
@@ -10,10 +16,6 @@ import org.parboiled.Rule;
 import org.parboiled.annotations.*;
 import org.parboiled.parserunners.ReportingParseRunner;
 
-/**
- * 
- * @org jlp.jdb-labs.com/JLPPegParser
- */
 @BuildParseTree
 public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
