@@ -1,1 +1,0 @@
-Make the parser configurable with respect to comment delimiters.
