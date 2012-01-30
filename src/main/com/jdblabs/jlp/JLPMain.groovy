@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory
  */
 public class JLPMain {
 
-    public static final String VERSION = "1.6"
+    public static final String VERSION = "1.7"
 
     private static Logger log = LoggerFactory.getLogger(JLPMain.class)
 
@@ -59,6 +59,12 @@ public class JLPMain {
         /// --version
         /// :   Display JLP versioning information.
         cli._(longOpt: 'version', 'Display the JLP version information.')
+
+        /// --no-source
+        /// :   Do not copy the source files into the output directory alongside
+        ///     the documentation.
+        cli._(longOpt: 'no-source', 'Do not copy the source files into the' +
+            ' output directory alongside the documentation.')
 
         /// #### Parse the options.
         def opts = cli.parse(args)
@@ -121,6 +127,9 @@ public class JLPMain {
                     "${cssFile.canonicalPath}'."
                 println "      Using the default CSS." }}
 
+        /// Look for our `--no-source` option.
+        def includeSource = !opts."no-source"
+
         /// #### Create the input file list.
 
         /// We will start with the filenames passed as arguments on the command
@@ -151,7 +160,8 @@ public class JLPMain {
             else { inputFiles << file } }
 
         /// #### Process the files.
-        Processor.process(outputDir, css, inputFiles)
+        log.trace("Starting JLP processor.")
+        Processor.process(outputDir, css, inputFiles, includeSource)
     }
 
 }

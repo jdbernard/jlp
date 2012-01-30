@@ -142,15 +142,15 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         <title>${escape(processor.currentDocId)}</title>
         <meta http-equiv="content-type" content="text/html; charset=UTF-8">
         <link type="text/css" rel="stylesheet" media="all"
-            href="${resolveLink('/css/jlp.css')}"></link>
+            href="${resolveLink('/.css/jlp.css')}"></link>
 
         <!-- syntax highlighting plugin -->
         <link type="text/css" rel="stylesheet" media="all"
-            href="${resolveLink('/sh/styles/shCoreDefault.css')}"></link>
+            href="${resolveLink('/.sh/styles/shCoreDefault.css')}"></link>
         <script type="text/javascript"
-            src="${resolveLink('/sh/scripts/XRegExp.js')}"></script>
+            src="${resolveLink('/.sh/scripts/XRegExp.js')}"></script>
         <script type="text/javascript"
-            src="${resolveLink('/sh/scripts/shCore.js')}"></script>""")
+            src="${resolveLink('/.sh/scripts/shCore.js')}"></script>""")
 
         /// If there is a language-specific brush, include it
         def shBrush = processor.shBrushForSourceType(
@@ -159,7 +159,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         if (shBrush) { sb.append("""
 
         <script type="text/javascript"
-            src="${resolveLink('/sh/scripts/' + shBrush + '.js')}"></script>""") }
+            src="${resolveLink('/.sh/scripts/' + shBrush + '.js')}"></script>""") }
 
         /// Finish our header and begin the body.
         sb.append("""

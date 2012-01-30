@@ -46,6 +46,10 @@ public class Processor {
     /// A shortcut for `docs[currentDocId]`
     public TargetDoc currentDoc
 
+    /// Setting to control whether the source code is copied into the final
+    /// documentation directory or not.
+    public boolean includeSource
+
     /// ### Non-public State
     /// @org jlp.jdb-labs.com/Processor/non-public-state
 
@@ -67,7 +71,7 @@ public class Processor {
      * to the directory named in `outputDir`, using the CSS given in `css`
      */
     public static void process(File outputDir, def css,
-    List<File> inputFiles) {
+    List<File> inputFiles, boolean includeSource) {
 
         /// Find the closest common parent folder to all of the files given.
         /// This will be our input root for the parsing process.
@@ -78,7 +82,8 @@ public class Processor {
         Processor inst = new Processor(
             inputRoot: inputDir,
             outputRoot: outputDir,
-            css: css)
+            css: css,
+            includeSource: includeSource)
 
         /// Run the process.
         inst.process(inputFiles) }
@@ -96,17 +101,24 @@ public class Processor {
         /// constructor.
 
         /// * Write the CSS file to our output directory.
-        File cssFile = new File(outputRoot, "css/jlp.css")
+        File cssFile = new File(outputRoot, ".css/jlp.css")
         cssFile.parentFile.mkdirs()
         cssFile.text = css.text
 
         /// * Extract the syntax highlighter files to the output directory.
         File shFile = new File(outputRoot, "temp.jar")
+        File shDir = new File(outputRoot, "sh")
+        File metaDir = new File(outputRoot, "META-INF")
         getClass().getResourceAsStream("/syntax-highlighter.jar").withStream { is ->
             shFile.withOutputStream { os ->
                 while (is.available()) { os.write(is.read()) }}}
         JarUtils.extract(shFile, outputRoot)
+        shDir.renameTo(new File(outputRoot, '.sh'))
+
+        /// * Delete our temporary jar file and the META-INF directory extracted
+        /// from it.
         shFile.delete()
+        metaDir.deleteDir()
 
         /// * Create the processing context for each input file. We are using
         ///   the name of the file (including the extension) as the id. If there
@@ -117,6 +129,12 @@ public class Processor {
             // Get the relative path as path elements.
             def relPath = getRelativeFilepath(inputRoot, file)
             def pathParts = relPath.split('/') as List
+
+            // Get our file type.
+            def fileType = sourceTypeForFile(file)
+
+            // We will skip binary files and files we know nothing about.
+            if (fileType == 'binary' || fileType == 'unknown') { return; }
 
             // Start with just the file name.
             def docId = pathParts.pop()
@@ -137,11 +155,20 @@ public class Processor {
         /// * Run the parse phase on each of the files. For each file, we load
         ///   the parser for that file type and parse the file into an abstract
         ///   syntax tree (AST).
+        def badDocs = []
         processDocs {
             log.trace("Parsing '{}'.", currentDocId)
             def parser = getParser(currentDoc.sourceType)
-            // TODO: error detection
-            currentDoc.sourceAST = parser.parse(currentDoc.sourceFile.text) }
+
+            // TODO: better error detection and handling
+            currentDoc.sourceAST = parser.parse(currentDoc.sourceFile.text)
+            
+            if (currentDoc.sourceAST == null) {
+                log.warn("Unable to parse '{}'. Ignoring this document.", currentDocId)
+                badDocs << currentDocId }}
+
+        /// * Remove all the documents we could not parse from our doc list.
+        docs = docs.findAll { docId, doc -> !badDocs.contains(docId) }
 
         /// * Run our generator parse phase (see
         ///   [`JLPBaseGenerator`](jlp://com.jdb-labs.jlp.JLPBaseGenerator/phases)
@@ -176,9 +203,9 @@ public class Processor {
             if (!outputDir.exists()) { outputDir.mkdirs() }
 
             /// Copy the source file over.
-            // TODO: make this behavior customizable.
-            (new File(outputRoot, relativePath)).withWriter {
-                it.print currentDoc.sourceFile.text }
+            if (includeSource) {
+                (new File(outputRoot, relativePath)).withWriter {
+                    it.print currentDoc.sourceFile.text }}
 
             /// Write the output to the file.
             outputFile.withWriter { it.println currentDoc.output } } }
@@ -338,15 +365,22 @@ public class Processor {
 
         /// Lookup the file type by extension
         switch (extension) {
-            case 'c': case 'h': return 'c';
-            case 'c++': case 'h++': case 'cpp': case 'hpp': return 'cpp';
-            case 'erl': case 'hrl': return 'erlang';
-            case 'groovy': return 'groovy';
-            case 'java': return 'java';
-            case 'js': return 'javascript';
-            case 'md': return 'markdown';
-            case 'html': return 'html';
-            case 'xml': case 'xhtml': return 'xml';
+            case 'c': case 'h': return 'c'
+            case 'c++': case 'h++': case 'cpp': case 'hpp': return 'cpp'
+            case 'erl': case 'hrl': return 'erlang'
+            case 'groovy': return 'groovy'
+            case 'java': return 'java'
+            case 'js': return 'javascript'
+            case 'md': return 'markdown'
+            case 'html': return 'html'
+            case 'xml': case 'xhtml': return 'xml'
+            case 'prg': return 'foxpro'
+            case 'sql': return 'sql'
+
+            // binary file types
+            case 'bin': case 'com': case 'exe': case 'o':
+            case 'bz2': case 'tar': case 'tgz': case 'zip': case 'jar':
+                return 'binary'
             default: return 'unknown'; }}
 
     /**
@@ -362,6 +396,7 @@ public class Processor {
             case 'java': return 'shBrushJava'
             case 'javascript': return 'shBrushJScript'
             case 'html': case 'xml': return 'shBrushXml'
+            case 'sql': return 'shBrushSql'
             default: return null }}
 
     /**
@@ -396,6 +431,10 @@ public class Processor {
                     parsers[sourceType] = Parboiled.createParser(
                         JLPPegParser, '%%')
                     break
+                case 'foxpro':
+                    parsers[sourceType] = Parboiled.createParser(
+                        JLPPegParser, ['**', '&&&'])
+                    break
                 case 'markdown':
                     parsers[sourceType] = new MarkdownParser()
                     break
@@ -403,6 +442,10 @@ public class Processor {
                     parsers[sourceType] = Parboiled.createParser(
                         JLPPegParser, '<!--', '-->',
                         '#$%^&*()_-+=|;:\'",<>?~`', '<<?')
+                    break
+                case 'sql':
+                    parsers[sourceType] = Parboiled.createParser(JLPPegParser,
+                        '/**', '*/', '!#$%^&*()_-=+|;:\'",<>?~`', '---')
                     break
                 case 'c':
                 case 'cpp':

@@ -66,6 +66,19 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
         SDOC_START = String(sdocStart).label("SDOC_START"); }
 
     /**
+     * #### Single-line comments only constructor.
+     * This is the same as the previous constructor except it allows the caller
+     * to define several different syntax for single-line comments. This is
+     * useful for languages that support several different syntaxes for comment
+     * lines (e.g. bash, Visual FoxPro).
+     */
+    public JLPPegParser(List sdocStarts) {
+        MDOC_START = NOTHING;
+        MDOC_LINE_START = NOTHING;
+        MDOC_END = NOTHING;
+        SDOC_START = FirstOf(sdocStarts.toArray()).label("SDOC_START"); }
+
+    /**
      * #### Default constructor.
      * The default constructor creates a JLPPegParser configured to recognize
      * comments used by languages like C++ and Java. It follows the convention
