@@ -1,0 +1,32 @@
+Implement special-purpose Markdown processor. This way it can be intelligent
+about connecting seperated doc-blocks that should be a unit, can process thing
+like link references on a whole-document basis, and can be more intelligent
+about indentation, line numbers for doc blocks.
+
+Consider building up common, generic AST nodes for code parsers so that most of
+the work of integrating a new language is already done in the common code,
+leaving only the very specific behavior to be implemented. For starters:
+
+CodeUnit
+:   Supports things like classes in OOP, modules, even files if that is a
+    common organizational unit for the language.
+
+Callable
+:   Supports methods, functions, subroutines, closures, anything that takes
+    parameters and returns a value.
+
+Structure
+:   May be a useful abstraction for pure data objects (Erlang record
+    definitions, C/C++ unions and structs, enums, etc.).
+
+Make Directives completely configurable. Do not hard-code an enumeration of
+possible values. Make the actual directive text just another field on the class.
+This allows language-specific implementations to extend the built-in Directives
+easily. It also has the benefit of allowing unknown or invalid directives
+through the parser without causing the source file to fail to parse. This gives
+us a better way to warn the user of unknown directives. To this end it may be
+good to assemble a list of defined directives at runtime, but this would not
+happen in the parser itself.
+
+Add back the @doc directive to return to private implementation notes within a
+block that has so far been marked public with an @api directive.
