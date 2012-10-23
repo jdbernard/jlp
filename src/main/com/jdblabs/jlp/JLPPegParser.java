@@ -513,8 +513,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
     /// ### Utility/Helper Functions. ###
     /// ---------------------------------
 
-    /// The `popAs` functions exist primarily to make the parser rules more readable
-    /// by providing shortcuts for common casts.
+    /// The `popAs` functions exist primarily to make the parser rules more
+    /// readable by providing shortcuts for common casts.
     String popAsString() { return (String) pop(); }
     Integer popAsInt() { return (Integer) pop(); }
 
@@ -524,8 +524,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * #### addToDocBlock
-     * Add the given block to the [`SourceFile`] node expected to be at the top of
-     * the parser value stack.
+     * Add the given block to the [`SourceFile`] node expected to be at the top
+     * of the parser value stack.
      *
      * [`SourceFile`]: jlp://jlp.jdb-labs.com/ast/SourceFile
      */
@@ -535,8 +535,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
     /**
      * #### addToDocBlock
-     * Add the given [`Directive`] or [`DocText`] to the [`DocBlock`] expected to be at the
-     * top of the parser value stack.
+     * Add the given [`Directive`] or [`DocText`] to the [`DocBlock`] expected
+     * to be at the top of the parser value stack.
      *
      * [`Directive`]: jlp://jlp.jdb-labs.com/ast/Directive
      * [`DocText`]: jlp://jlp.jdb-labs.com/ast/DocText
