@@ -13,7 +13,7 @@ import com.jdblabs.jlp.ast.SourceFile;
  * be an abstract class implementing methods that take additional input for
  * convenience.
  *
- * [`SourceFile`]: jlp://jlp.jdb-labs.com/SourceFile
+ * [`SourceFile`]: jlp://jlp.jdb-labs.com/ast/SourceFile
  *
  * @org jlp.jdb-labs.com/JLPParser
  */
