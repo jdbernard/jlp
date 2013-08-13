@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>LinkAnchor.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>LinkAnchor</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp
+
+import com.jdblabs.jlp.ast.ASTNode
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/LinkAnchor'>
+<td class="docs"><p>A <em>LinkAnchor</em> in the documentation is very similar to an HTML anchor. It creates a reference in the documentation that can used by the author to link to this point.</p><p>The author uses a URL with the <code>jlp</code> protocol to refer to anchors. For example: <code>jlp://jlp.jdb-labs.com/LinkAnchor</code> refers to this documentation.</p>
+<div class='api'><p>LinkAnchor is a data class to hold information about the link anchors defined by <code>@org</code> directives.</p></div></td>
+<td class="code"><pre class="brush: groovy;">
+public class LinkAnchor {
+
+    public enum LinkType { InlineLink, BlockLink, FileLink }
+
+</pre></td></tr><tr>
+<td class="docs"><p>The anchor id. This comes from the text after the directive.</p></td>
+<td class="code"><pre class="brush: groovy;">    public String id
+
+    public LinkType type = LinkType.BlockLink
+    public ASTNode source
+    public String sourceDocId
+
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

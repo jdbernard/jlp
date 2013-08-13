@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Directive.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>Directive</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp.ast
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/ast/Directive'>
+<td class="docs"><div class='api'><p>ASTNode for <code>Directives</code>. A documentation directive allows the author to add metadata and processing instructions.</p></div></td>
+<td class="code"><pre class="brush: groovy;">
+public class Directive extends ASTNode {
+    </pre></td></tr><tr>
+<td class="docs"><p>There are currently five types of directive currently available:</p>
+<dl><dt>API</dt><dd>The <em>API</em> directive allows the author to seperate the parts of the documentation that should be included in javadoc-style API documentation, as opposed to full literate code-style documentation.</dd><dt>Author</dt><dd>The <em>Author</em> directive is used to specify the author of a set of documentation. It can be used to denote the author of an entire file when used in the first documentation block or just the author of a specific method when used in the documentation block before that method.</dd><dt>Copyright</dt><dd>Similar to <em>Author</em>, this directive allows you to mark the copyright information for a set of documentation.</dd><dt>Example</dt><dd>Used to mark an example in the documentation. The full doc block following the directive will be included inline as an example, typically typeset in a monospace font.</dd><dt>Include</dt><dd>Include the contents of a url inline in the documentation where this directive occurs. This is primarily intended to allow the author to include other parts of the documentation inline via the <code>jlp</code> protocol and link anchors, but it is not restriced to the <code>jlp</code> protocol. The include directive is followed by a URL to the resource to include. This can be any valid URL. Org</dd><dd>Used to create a link anchor in the documentation. The <code>jlp</code> protocol in a URL allows the author to link back to a link anchor. Refer to the <a href="../LinkAnchor.groovy.html#jlp.jdb-labs.com/LinkAnchor"><code>LinkAnchor</code></a> documentation for more information about link anchors.</dd>
+</dl></td>
+<td class="code"><pre class="brush: groovy;">
+    public static enum DirectiveType {
+        Api, Author, Copyright, Example, Include, Org;
+        
+        public static DirectiveType parse(String typeString) {
+            valueOf(typeString.toLowerCase().capitalize()) } }
+
+    public final DocBlock parentBlock;
+    public final DirectiveType type;
+    public final String value;
+
+    public Directive(String value, String typeString, int lineNumber,
+        DocBlock parentBlock) {
+        super(lineNumber)
+        this.value = value
+        this.type = DirectiveType.parse(typeString)
+        this.parentBlock = parentBlock }
+        
+    public String toString() { &quot;[${lineNumber}:Directive: ${type}, ${value}]&quot; }
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

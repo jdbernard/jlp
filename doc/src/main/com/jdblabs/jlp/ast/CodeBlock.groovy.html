@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>CodeBlock.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>CodeBlock</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp.ast
+
+import java.util.Map
+
+</pre></td></tr><tr>
+<td class="docs"><div class='api'><p>ASTNode for <code>CodeBlocks</code>.</p></div></td>
+<td class="code"><pre class="brush: groovy;">
+public class CodeBlock extends ASTNode {
+
+    public Map&lt;Integer, String&gt; lines = [:]
+
+    public CodeBlock(int lineNumber) { super(lineNumber) }
+
+    public String toString() {
+        def linesVal = &quot;&quot;
+        lines.each { lineNum, value -&gt; linesVal += &quot;${lineNum}:${value}&quot; }
+            
+        return &quot;[${lineNumber}:CodeBlock: ${linesVal}]&quot; }
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

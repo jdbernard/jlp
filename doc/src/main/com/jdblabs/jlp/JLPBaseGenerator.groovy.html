@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>JLPBaseGenerator.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>JLPBaseGenerator</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp
+
+import com.jdblabs.jlp.ast.*
+import java.util.List
+import java.util.Map
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/JLPBaseGenerator'>
+<td class="docs"><p>This class defines the interface for JLP Generators and implements basic functionality for the parse phase. </p></td>
+<td class="code"><pre class="brush: groovy;">
+public abstract class JLPBaseGenerator {
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/notes/processor-generator-coupling'>
+<td class="docs"><p>The generator works in close conjunction with a JLP Processor. This tight coupling is intended for these two classes. The distiction between the two classes is scope. The Processor class is concerned with data and behavior common to the whole documentation process whereas the Generator is concerned only with one file. The Generator does have access to information about the overall process through this link to the Processor. One example of the need for this link is the resolution of JLP link targets which may be defined in a different file but referenced in the file the Generator is processing.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected Processor processor
+
+    protected JLPBaseGenerator(Processor processor) {
+        this.processor = processor }
+    </pre></td></tr>
+<tr id='com.jdb-labs.jlp.JLPBaseGenerator/phases'>
+<td class="docs"><h3>Generator phases</h3><p>There are two phases for JLP Generators: <strong>parse</strong> and <strong>emit</strong>. </p><p>The <strong>parse</strong> phase allows the Generator to build up facts about the file being processed before emitting the documentation in the <strong>emit</strong> phase. There is a <code>parse</code> method for each <a href="ast/ASTNode.groovy.html#jlp.jdb-labs.com/ast/ASTNode"><code>ASTNode</code></a> type. The default implementation for JLPBaseGenerator calls the <code>parse</code> methods in such a way that it visits each <code>ASTNode</code> in the file.</p><p>The <strong>emit</strong> phase is where the Generator creates the documentation for each <code>ASTNode</code>. Unlike the parse phase, there is no default implementation for the emit phase as emitting the final result will be very dependant on the emitter.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected void parse(SourceFile sourceFile) {
+        sourceFile.blocks.each { block -&gt; parse(block) } }
+
+    protected void parse(Block block) {
+        parse(block.docBlock)
+        parse(block.codeBlock) }
+
+    protected void parse(DocBlock docBlock) {
+        docBlock.directives.each { directive -&gt; parse(directive) }
+        docBlock.docTexts.each { docText -&gt; parse(docText) } }
+
+    protected abstract void parse(Directive directive)
+    protected abstract void parse(CodeBlock codeBlock)
+    protected abstract void parse(DocText docText)
+
+    protected abstract String emit(SourceFile sourceFile)
+    protected abstract String emit(Block block)
+    protected abstract String emit(DocBlock docBlock)
+    protected abstract String emit(CodeBlock codeBlock)
+    protected abstract String emit(DocText docText)
+    protected abstract String emit(Directive directive)
+
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

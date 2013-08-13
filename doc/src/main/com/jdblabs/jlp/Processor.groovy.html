@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Processor.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>Processor</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp
+
+import com.jdblabs.jlp.LinkAnchor.LinkType
+import com.jdbernard.util.JarUtils
+import java.util.jar.JarInputStream
+import org.parboiled.BaseParser
+import org.parboiled.Parboiled
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor'>
+<td class="docs"><p>Processor processes one batch of input files to create a set of output files. It holds the intermediate state needed by the generators and coordinates the work of the parsers and generators for each of the input files.</p></td>
+<td class="code"><pre class="brush: groovy;">
+public class Processor {
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/public-state'>
+<td class="docs"><h3>Public State</h3></td>
+<td class="code"><pre class="brush: groovy;">
+</pre></td></tr><tr>
+<td class="docs"><p>A map of all the link anchors defined in the documents.</p></td>
+<td class="code"><pre class="brush: groovy;">    public Map&lt;String, LinkAnchor&gt; linkAnchors = [:]
+
+</pre></td></tr><tr>
+<td class="docs"><p>A map of all the documents being processed.</p></td>
+<td class="code"><pre class="brush: groovy;">    public Map&lt;String, TargetDoc&gt; docs = [:]
+
+</pre></td></tr><tr>
+<td class="docs"><p>The id of the document currently being processed.</p></td>
+<td class="code"><pre class="brush: groovy;">    public String currentDocId = null
+
+</pre></td></tr><tr>
+<td class="docs"><p>The root of the input path.</p></td>
+<td class="code"><pre class="brush: groovy;">    public File inputRoot
+
+</pre></td></tr><tr>
+<td class="docs"><p>The root of the output path.</p></td>
+<td class="code"><pre class="brush: groovy;">    public File outputRoot
+
+</pre></td></tr><tr>
+<td class="docs"><p>The CSS that will be used for the resulting HTML documents. This object can be any object that responds to the <code>text</code> property.</p></td>
+<td class="code"><pre class="brush: groovy;">    public def css
+
+</pre></td></tr><tr>
+<td class="docs"><p>A shortcut for <code>docs[currentDocId]</code></p></td>
+<td class="code"><pre class="brush: groovy;">    public TargetDoc currentDoc
+
+</pre></td></tr><tr>
+<td class="docs"><p>Setting to control whether the source code is copied into the final documentation directory or not.</p></td>
+<td class="code"><pre class="brush: groovy;">    public boolean includeSource
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/non-public-state'>
+<td class="docs"><h3>Non-public State</h3></td>
+<td class="code"><pre class="brush: groovy;">
+</pre></td></tr><tr>
+<td class="docs"><p>Maps of all the parsers and generators by input file type. Parsers and generators are both safe for re-use within a single thread, so we cache them here.</p></td>
+<td class="code"><pre class="brush: groovy;">    protected Map&lt;String, JLPParser&gt; parsers = [:]
+    protected Map&lt;String, JLPBaseGenerator&gt; generators = [:]
+
+    private Logger log = LoggerFactory.getLogger(getClass())
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/public-methods'>
+<td class="docs"><h3>Public Methods.</h3></td>
+<td class="code"><pre class="brush: groovy;">    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/process'>
+<td class="docs"><h4>Processor.process</h4>
+<div class='api'><p>Process the input files given, writing the resulting documentation to the directory named in <code>outputDir</code>, using the CSS given in <code>css</code></p></div></td>
+<td class="code"><pre class="brush: groovy;">
+    public static void process(File outputDir, def css,
+    List&lt;File&gt; inputFiles, boolean includeSource) {
+
+</pre></td></tr><tr>
+<td class="docs"><p>Find the closest common parent folder to all of the files given. This will be our input root for the parsing process.</p></td>
+<td class="code"><pre class="brush: groovy;">        File inputDir = inputFiles.inject(inputFiles[0]) { commonRoot, file -&gt;
+            getCommonParent(commonRoot, file) }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Create an instance of this class with the options given.</p></td>
+<td class="code"><pre class="brush: groovy;">        Processor inst = new Processor(
+            inputRoot: inputDir,
+            outputRoot: outputDir,
+            css: css,
+            includeSource: includeSource)
+
+</pre></td></tr><tr>
+<td class="docs"><p>Run the process.</p></td>
+<td class="code"><pre class="brush: groovy;">        inst.process(inputFiles) }
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/non-public-methods'>
+<td class="docs"><h3>Non-Public implementation methods.</h3></td>
+<td class="code"><pre class="brush: groovy;">    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/process2'>
+<td class="docs"><h4>process</h4></td>
+<td class="code"><pre class="brush: groovy;">
+    protected void process(inputFiles) {
+
+</pre></td></tr><tr>
+<td class="docs"><p>Remember that the data for the processing run was initialized by the constructor.</p></td>
+<td class="code"><pre class="brush: groovy;">
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Write the CSS file to our output directory.</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        File cssFile = new File(outputRoot, &quot;.css/jlp.css&quot;)
+        cssFile.parentFile.mkdirs()
+        cssFile.text = css.text
+
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Extract the syntax highlighter files to the output directory.</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        File shFile = new File(outputRoot, &quot;temp.jar&quot;)
+        File shDir = new File(outputRoot, &quot;sh&quot;)
+        File metaDir = new File(outputRoot, &quot;META-INF&quot;)
+        getClass().getResourceAsStream(&quot;/syntax-highlighter.jar&quot;).withStream { is -&gt;
+            shFile.withOutputStream { os -&gt;
+                while (is.available()) { os.write(is.read()) }}}
+        JarUtils.extract(shFile, outputRoot)
+        shDir.renameTo(new File(outputRoot, '.sh'))
+
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Delete our temporary jar file and the META-INF directory extracted from it.</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        shFile.delete()
+        metaDir.deleteDir()
+
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Create the processing context for each input file. We are using  the name of the file (including the extension) as the id. If there  is more than one file with the same name we will include the  file's parent directory as well.</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        inputFiles.each { file -&gt;
+            
+            // Get the relative path as path elements.
+            def relPath = getRelativeFilepath(inputRoot, file)
+            def pathParts = relPath.split('/') as List
+
+            // We will skip binary files and files we know nothing about.
+            def fileType = sourceTypeForFile(file)
+            if (fileType == 'binary' || fileType == 'unknown') { return; }
+
+            // Start with just the file name.
+            def docId = pathParts.pop()
+
+            log.trace(&quot;New target document: '{}' from source: '{}'&quot;,
+                docId, relPath)
+
+            // As long as the current id is taken, add the next parent directory
+            // to the id.
+            while(docs[docId] != null) { docId = pathParts.pop() + '/' + docId }
+
+            // Finally create the TargetDoc item.
+            docs[docId] = new TargetDoc(
+                sourceDocId: docId,
+                sourceFile: file,
+                sourceType: sourceTypeForFile(file)) }
+
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Run the parse phase on each of the files. For each file, we load  the parser for that file type and parse the file into an abstract  syntax tree (AST).</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        def badDocs = []
+        processDocs {
+            log.trace(&quot;Parsing '{}'.&quot;, currentDocId)
+            def parser = getParser(currentDoc.sourceType)
+
+            // TODO: better error detection and handling
+            currentDoc.sourceAST = parser.parse(currentDoc.sourceFile.text)
+            
+            if (currentDoc.sourceAST == null) {
+                log.warn(&quot;Unable to parse '{}'. Ignoring this document.&quot;, currentDocId)
+                badDocs &lt;&lt; currentDocId }}
+
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Remove all the documents we could not parse from our doc list.</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        docs = docs.findAll { docId, doc -&gt; !badDocs.contains(docId) }
+
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Run our generator parse phase (see  <a href="JLPBaseGenerator.groovy.html#com.jdb-labs.jlp.JLPBaseGenerator/phases"><code>JLPBaseGenerator</code></a>  for an explanation of the generator phases).</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        processDocs {
+            log.trace(&quot;Second-pass parsing for '{}'.&quot;, currentDocId)
+            def generator = getGenerator(currentDoc.sourceType)
+            // TODO: error detection
+            generator.parse(currentDoc.sourceAST) }
+
+
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Second pass by the generators, the emit phase.</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        processDocs {
+            log.trace(&quot;Emitting documentation for '{}'.&quot;, currentDocId)
+            def generator = getGenerator(currentDoc.sourceType)
+            currentDoc.output = generator.emit(currentDoc.sourceAST) }
+
+</pre></td></tr><tr>
+<td class="docs"><ul>
+  <li>Write the output to the output directory.</li>
+</ul></td>
+<td class="code"><pre class="brush: groovy;">        processDocs {
+            
+</pre></td></tr><tr>
+<td class="docs"><p>Create the path and file object for the output file</p></td>
+<td class="code"><pre class="brush: groovy;">            String relativePath =
+                getRelativeFilepath(inputRoot, currentDoc.sourceFile)
+
+            File outputFile = new File(outputRoot, relativePath + &quot;.html&quot;)
+            File outputDir = outputFile.parentFile
+
+            log.trace(&quot;Saving output for '{}' to '{}'&quot;,
+                currentDocId, outputFile)
+
+</pre></td></tr><tr>
+<td class="docs"><p>Create the directory for this file if it does not exist.</p></td>
+<td class="code"><pre class="brush: groovy;">            if (!outputDir.exists()) { outputDir.mkdirs() }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Copy the source file over.</p></td>
+<td class="code"><pre class="brush: groovy;">            if (includeSource) {
+                (new File(outputRoot, relativePath)).withWriter {
+                    it.print currentDoc.sourceFile.text }}
+
+</pre></td></tr><tr>
+<td class="docs"><p>Write the output to the file.</p></td>
+<td class="code"><pre class="brush: groovy;">            outputFile.withWriter { it.println currentDoc.output } } }
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/processDocs'>
+<td class="docs"><h4>processDocs</h4><p>A helper method to walk over every document the processor is aware of, setting up the <code>currentDocId</code> and <code>currentDoc</code> variables before calling the given closure.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected def processDocs(Closure c) {
+        docs.each { docId, doc -&gt;
+            currentDocId = docId
+            currentDoc = doc
+
+            return c() } }
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/resolveLink'>
+<td class="docs"><h4>resolveLink</h4><p>Given a link, resolve it against the current output root.</p><p>If this is a full URL, then we will attempt to resolve it based on the URL protocol. If this is not a full URL then it will resolve the link against the output root.</p>
+<dl><dt><code>jlp://</code></dt><dd>Resolve the link by looking for a matching link anchor defined in the documentation.</dd><dt><em>other protocol</em></dt><dd>Return the link as-is.</dd><dt><em>absolute path (starts with <code>/</code>)</em></dt><dd>Returns the link resolved against the output root.</dd><dt><em>relative path (no leading <code>/</code>)</em></dt><dd><p>Returns the link resolved against the <code>TargetDoc</code> passed in.</p></dd>
+</dl></td>
+<td class="code"><pre class="brush: groovy;">
+    public String resolveLink(String link, TargetDoc targetDoc) {
+        switch (link) {
+
+</pre></td></tr><tr>
+<td class="docs"><p>JLP link, let's resolve with a link anchor</p></td>
+<td class="code"><pre class="brush: groovy;">            case ~/^jlp:.*/:
+</pre></td></tr><tr>
+<td class="docs"><p>Get the org data we found in the parse phase for this org id.</p></td>
+<td class="code"><pre class="brush: groovy;">                def m = (link =~ /jlp:\/\/(.+)/)
+                def linkId = m[0][1]
+                def linkAnchor = linkAnchors[m[0][1]]
+
+                if (!linkAnchor) {
+                    // We do not have any reference to this id.
+                    log.warn(&quot;Unable to resolve a jlp link: {}.&quot;, link)
+                    return &quot;broken_link(${linkId})&quot; }
+
+</pre></td></tr><tr>
+<td class="docs"><p>If this is a <code>FileLink</code> then we do not need the actual linkId, just the file being linked to.</p></td>
+<td class="code"><pre class="brush: groovy;">                if (linkAnchor.type == LinkType.FileLink) { linkId = &quot;&quot; }
+
+</pre></td></tr><tr>
+<td class="docs"><p>This link points to a location in this document.</p></td>
+<td class="code"><pre class="brush: groovy;">                if (targetDoc.sourceDocId == linkAnchor.sourceDocId) {
+                    return &quot;#${linkId}&quot; }
+
+</pre></td></tr><tr>
+<td class="docs"><p>The link should point to a different document.</p></td>
+<td class="code"><pre class="brush: groovy;">                else {
+                    TargetDoc linkDoc = docs[linkAnchor.sourceDocId]
+
+                    String pathToLinkedDoc = getRelativeFilepath(
+                        targetDoc.sourceFile.parentFile, linkDoc.sourceFile)
+
+                    return &quot;${pathToLinkedDoc}.html#${linkId}&quot; }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Other protocol: return as-is.</p></td>
+<td class="code"><pre class="brush: groovy;">            case ~/^\w+:.*/: return link
+
+</pre></td></tr><tr>
+<td class="docs"><p>Absolute link, resolve relative to the output root.</p></td>
+<td class="code"><pre class="brush: groovy;">            case ~/^\/.*/: 
+</pre></td></tr><tr>
+<td class="docs"><p>Our link should be the relative path (if needed) plus the link without the leading <code>/</code>.</p></td>
+<td class="code"><pre class="brush: groovy;">                def relPath = getRelativeFilepath(targetDoc.sourceFile, inputRoot)
+                return (relPath ? &quot;${relPath}/&quot; : &quot;&quot;) + link[1..-1]
+            
+</pre></td></tr><tr>
+<td class="docs"><p>Relative link, resolve using the output root and the source document relative to the input root.</p></td>
+<td class="code"><pre class="brush: groovy;">            default:
+                def relPath = getRelativeFilepath(inputRoot, targetDoc.sourceFile)
+                return &quot;${relPath}/${link}&quot; }}
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/getRelativeFilepath'>
+<td class="docs"><h4>getRelativeFilepath</h4><p>Assuming our current directory is <code>root</code>, get the relative path to <code>file</code>.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    public static String getRelativeFilepath(File root, File file) {
+</pre></td></tr><tr>
+<td class="docs"><p>Make sure our root is a directory</p></td>
+<td class="code"><pre class="brush: groovy;">        if (!root.isDirectory()) root= root.parentFile
+
+</pre></td></tr><tr>
+<td class="docs"><p>Split both paths into their individual parts.</p></td>
+<td class="code"><pre class="brush: groovy;">        def rootPath = root.canonicalPath.split('/')
+        def filePath = file.canonicalPath.split('/')
+
+        def relativePath = []
+
+</pre></td></tr><tr>
+<td class="docs"><p>Find the point of divergence in the two paths by walking down their parts until we find a pair that do not match.</p></td>
+<td class="code"><pre class="brush: groovy;">        int i = 0
+        while (i &lt; Math.min(rootPath.length, filePath.length) &amp;&amp;
+               rootPath[i] == filePath[i]) { i++ }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Backtrack from our root to our newly-found common parent directory.</p></td>
+<td class="code"><pre class="brush: groovy;">        (i..&lt;rootPath.length).each { relativePath &lt;&lt; &quot;..&quot; }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Add the remainder of the path from our common parent directory to our file.</p></td>
+<td class="code"><pre class="brush: groovy;">        (i..&lt;filePath.length).each { j -&gt; relativePath &lt;&lt; filePath[j] }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Reconstitute the parts into one string.</p></td>
+<td class="code"><pre class="brush: groovy;">        return relativePath.join('/') }
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/getCommonParent'>
+<td class="docs"><h4>getCommonParent</h4><p>Find the common parent directory to the given files.</p></td>
+<td class="code"><pre class="brush: groovy;"> 
+    public static File getCommonParent(File file1, File file2) {
+            def path1 = file1.canonicalPath.split('/')
+            def path2 = file2.canonicalPath.split('/')
+            def newPath = []
+
+            // build new commonPath based on matching paths so far
+            int i = 0
+            while (i &lt; Math.min(path1.length, path2.length) &amp;&amp;
+                   path1[i] == path2[i]) {
+                
+                newPath &lt;&lt; path2[i]
+                i++ }
+
+            return new File(newPath.join('/')) }
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/sourceTypeForFile'>
+<td class="docs"><h4>sourceTypeForFile</h4><p>Lookup the source type for a given file. We do a lookup based on the file extension for file types we recognize.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    public static sourceTypeForFile(File sourceFile) {
+
+</pre></td></tr><tr>
+<td class="docs"><p>First we need to find the file extension.</p></td>
+<td class="code"><pre class="brush: groovy;">        String extension
+        def nameParts = sourceFile.name.split(/\./)
+
+</pre></td></tr><tr>
+<td class="docs"><p>If there is no extension, then this is a binary file.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (nameParts.length == 1) { return 'binary' }
+        else { extension = nameParts[-1] }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Lookup the file type by extension</p></td>
+<td class="code"><pre class="brush: groovy;">        switch (extension) {
+            case 'c': case 'h': return 'c'
+            case 'c++': case 'h++': case 'cpp': case 'hpp': return 'cpp'
+            case 'erl': case 'hrl': return 'erlang'
+            case 'groovy': return 'groovy'
+            case 'java': return 'java'
+            case 'js': return 'javascript'
+            case 'md': return 'markdown'
+            case 'html': return 'html'
+            case 'xml': case 'xhtml': return 'xml'
+            case 'prg': return 'foxpro'
+            case 'sql': return 'sql'
+
+            // binary file types
+            case 'bin': case 'com': case 'exe': case 'o':
+            case 'bz2': case 'tar': case 'tgz': case 'zip': case 'jar':
+                return 'binary'
+            default: return 'unknown'; }}
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/shBrushForSourceType'>
+<td class="docs"><h4>shBrushForSourceType</h4><p>Lookup the syntax highlighter brush for the given source type.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    public static String shBrushForSourceType(String sourceType) {
+        switch (sourceType) {
+            case 'c': case 'cpp': return 'shBrushCpp'
+            case 'erlang': return 'shBrushErlang'
+            case 'groovy': return 'shBrushGroovy'
+            case 'java': return 'shBrushJava'
+            case 'javascript': return 'shBrushJScript'
+            case 'html': case 'xml': return 'shBrushXml'
+            case 'sql': return 'shBrushSql'
+            default: return null }}
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/getGenerator'>
+<td class="docs"><h4>getGenerator</h4><p>Get a generator for the given source file type.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected getGenerator(String sourceType) {
+</pre></td></tr><tr>
+<td class="docs"><p>We lazily create the generators.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (generators[sourceType] == null) {
+            switch(sourceType) {
+</pre></td></tr><tr>
+<td class="docs"><p>So far, all languages are using the vanilla <a href="LiterateMarkdownGenerator.groovy.html#jlp.jdb-labs.com/LiterateMarkdownGenerator"><code>LiterateMarkdownGenerator</code></a></p></td>
+<td class="code"><pre class="brush: groovy;">                default:
+                    generators[sourceType] =
+                        new LiterateMarkdownGenerator(this) }}
+
+        return generators[sourceType] }
+    </pre></td></tr>
+<tr id='jlp.jdb-labs.com/Processor/getParser'>
+<td class="docs"><h4>getParser</h4><p>Get a parser for the given source file type.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected getParser(String sourceType) {
+</pre></td></tr><tr>
+<td class="docs"><p>We are lazily loading the parsers also.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (parsers[sourceType] == null) {
+</pre></td></tr><tr>
+<td class="docs"><p>We do have different parsers for different languages.</p></td>
+<td class="code"><pre class="brush: groovy;">            switch(sourceType) {
+                case 'erlang':
+                    parsers[sourceType] = Parboiled.createParser(
+                        JLPPegParser, '%%')
+                    break
+                case 'foxpro':
+                    parsers[sourceType] = Parboiled.createParser(
+                        JLPPegParser, ['**', '&amp;&amp;&amp;'])
+                    break
+                case 'markdown':
+                    parsers[sourceType] = new MarkdownParser()
+                    break
+                case 'html': case 'xml':
+                    parsers[sourceType] = Parboiled.createParser(
+                        JLPPegParser, '&lt;!--', '--&gt;',
+                        '#$%^&amp;*()_-+=|;:\'&quot;,&lt;&gt;?~`', '&lt;&lt;?')
+                    break
+                case 'sql':
+                        '</pre></td></tr><tr>
+<td class="docs"><p>, '</p></td>
+<td class="code"><pre class="brush: groovy;">', '!#$%^&amp;*()_-=+|;:\'&quot;,&lt;&gt;?~`', '---')
+                    break
+                case 'c':
+                case 'cpp':
+                case 'groovy':
+                case 'java':
+                case 'javascript':
+                default:
+                        '</pre></td></tr><tr>
+<td class="docs"><p>, '</p></td>
+<td class="code"><pre class="brush: groovy;">', '!#$%^&amp;*()_-=+|;:\'&quot;,&lt;&gt;?~`', '</pre></td></tr><tr>
+<td class="docs"><p>')</p></td>
+<td class="code"><pre class="brush: groovy;">                    break }}
+
+        return parsers[sourceType] }
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

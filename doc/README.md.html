@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>README.md</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href=".css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href=".sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src=".sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src=".sh/scripts/shCore.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>J Literate Programming</h1><h2>Overview</h2><p><em>Jonathan's Literate Programming</em> is my take on literate programming. This project grew out of a desire for a documentation system that:</p>
+<ul>
+  <li>generates all documentation from source-code comments,</li>
+  <li>is capable of facilitating both JavaDoc-style API documentation as well as  literate programming style of documentation,</li>
+  <li>has pluggable formatting (default to Markdown),</li>
+</ul><p>It is inspired by Donald Knuth's concept of literate programming, as well as the Docco system. I wanted something that provided the readability of Docco but was more full-featured. To that end, JLP currently features:</p>
+<ul>
+  <li><p><em>Documentation alongside code, distinct from normal comments.</em></p><p>JLP uses a javadoc-like extra delimiter to seperate normal comments from JLP comments.</p></li>
+  <li><p><em>Support for multiple languages out of the box.</em></p><p>JLP allows you to define custom comment delimiters for any language that supports single-line or multi-line comments. It comes configured with default settings for several languages. Ultimately I hope to cover most of the common programming languages.</p></li>
+  <li><p><em>Syntax highligting.</em></p><p>All code blocks will be highlighted according to the language they are written in.</p></li>
+</ul><p>This project is in its infancy and some of the larger goals are still unmet:</p>
+<ul>
+  <li><p><em>Code awareness.</em></p><p>JLP will understand the code it is processing. This will require building a parser for each supported language. By doing so JLP will be able to generate javadoc-style API documentation intelligently, and allow the author to reference code features in a native way (think javadoc @link but more generic).</p></li>
+  <li><p><em>Documentation Directives</em></p><p>Generally I want documentation to conform to code, not code to documentation, but I think some processing directives to JLP (how to combine several files into one, or split one in to many for example) would be useful.</p><p>In the same line of thought, it would be usefull to be able to switch the presentation layer of the documentation system depending on the type of file being displayed. For example, interface definitions and core pieces of the API may work better with a side-by-side layout whereas implementation details may work better in an interleaved layout. JLP processing directives would allow the author to specify which is intended on a file (or block?) level.</p></li>
+</ul><h2>Project Architecture</h2><h3>Control and Flow</h3>
+<ul>
+  <li><p><a href="src/main/com/jdblabs/jlp/JLPMain.groovy.html#jlp.jdb-labs.com/JLPMain">JLPMain</a></p><p>The entry point to the JLP executable. Parses the command line input and sets up the processor.</p></li>
+  <li><p><a href="src/main/com/jdblabs/jlp/Processor.groovy.html#jlp.jdb-labs.com/Processor">Processor</a></p><p>The Processor processes one batch of input files to create a set of output files. It holds the intermediate state needed by the generators and coordinates the work of the parsers and generators for each of the input files. This processor only generates HTML documentation and will likely be renamed in the future to reflect this.</p></li>
+  <li><p><a href="src/main/com/jdblabs/jlp/JLPBaseGenerator.groovy.html#jlp.jdb-labs.com/JLPBaseGenerator">JLPBaseGenerator</a></p><p>The Generator processes one input file. It parses the AST for the input file and emits the final documentation for the file. JLPBaseGenerator implementations are expected to be tightly coupled to Processor implementations.</p></li>
+  <li><p><a href="src/main/com/jdblabs/jlp/LiterateMarkdownGenerator.groovy.html#jlp.jdb-labs.com/LiterateMarkdownGenerator">LiterateMarkdownGenerator</a></p><p>This implemetation of JLPBaseGenerator generates literate-style documentation (as opposed to API-style), using <a href="http://daringfireball.net/projects/markdown/">Markdown</a> to format the documentation blocks.</p></li>
+</ul><h3>Parsing</h3>
+<ul>
+  <li><p><a href="src/main/com/jdblabs/jlp/JLPParser.java.html#jlp.jdb-labs.com/JLPParser">JLPParser</a></p><p>A very simple interface for parsing JLP input.</p></li>
+  <li><p><a href="src/main/com/jdblabs/jlp/JLPPegParser.java.html#">JLPPegParser</a></p><p>A <a href="http://en.wikipedia.org/wiki/Parsing_expression_grammar">PEG parser</a> implemented using the <a href="http://www.parboiled.org">parboiled</a> library. This is the default source code parser. It is able to parse JLP documentation but leaves code unparsed. It can be parameterized to fit the differing documentation styles of source languages.</p></li>
+</ul><h3>Abstract Syntax Tree</h3>
+<ul>
+  <li><p><a href="src/main/com/jdblabs/jlp/ast/SourceFile.groovy.html#jlp.jdb-labs.com/ast/SourceFile">SourceFile</a></p><p>The top-level AST element. This represents a source file.</p></li>
+</ul></td>
+<td class="code"><pre class="brush: markdown;"></pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

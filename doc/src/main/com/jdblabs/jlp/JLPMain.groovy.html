@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>JLPMain.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>JLPMain</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp
+
+import com.jdblabs.jlp.ast.ASTNode
+import com.jdblabs.jlp.ast.SourceFile
+import org.parboiled.Parboiled
+import org.parboiled.parserunners.ReportingParseRunner
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/JLPMain'>
+<td class="docs"><div class='api'><p>JLPMain is the entrypoint for the system. It is responsible for parsing the command-line options and invoking the Processor.</p></div></td>
+<td class="code"><pre class="brush: groovy;">
+public class JLPMain {
+
+    public static final String VERSION = &quot;1.7&quot;
+
+    private static Logger log = LoggerFactory.getLogger(JLPMain.class)
+
+    public static void main(String[] args) {
+
+</pre></td></tr><tr>
+<td class="docs"><h4>Define command-line options.</h4><p>We are using Groovy's <a href="http://groovy.codehaus.org/gapi/groovy/util/CliBuilder.html">CliBuilder</a> (a wrapper around the Apache Commons library).</p></td>
+<td class="code"><pre class="brush: groovy;">        CliBuilder cli = new CliBuilder(
+            usage: 'jlp [options] &lt;src-file&gt; &lt;src-file&gt; ...')
+
+</pre></td></tr><tr>
+<td class="docs"><dl><dt>-h, --help</dt><dd>Print help information.</dd>
+</dl></td>
+<td class="code"><pre class="brush: groovy;">        cli.h('Print this help information.', longOpt: 'help', required: false)
+
+</pre></td></tr><tr>
+<td class="docs"><dl><dt>-o, --outputdir <output-directory></dt><dd>Set the output directory where the documentation will be written.</dd>
+</dl></td>
+<td class="code"><pre class="brush: groovy;">        cli.o(&quot;Output directory (defaults to 'jlp-docs').&quot;,
+            longOpt: 'output-dir', args: 1, argName: &quot;output-dir&quot;,
+            required: false)
+
+</pre></td></tr><tr>
+<td class="docs"><dl><dt>--css-file <file></dt><dd>Specify an alternate CSS file for the output documentation.</dd>
+</dl></td>
+<td class="code"><pre class="brush: groovy;">        cli._('Use &lt;css-file&gt; for the documentation css.',
+            longOpt: 'css-file', args: 1, required: false, argName: 'css-file')
+
+</pre></td></tr><tr>
+<td class="docs"><dl><dt>--relative-path-root <root-directory></dt><dd>Override the current working directory. This is useful if you are invoking jlp remotely, or if the current working directory is incorrectly set by the executing environment.</dd>
+</dl></td>
+<td class="code"><pre class="brush: groovy;">        cli._(longOpt: 'relative-path-root', args: 1, required: false,
+            'Resolve all relative paths against this root.')
+
+</pre></td></tr><tr>
+<td class="docs"><dl><dt>--version</dt><dd>Display JLP versioning information.</dd>
+</dl></td>
+<td class="code"><pre class="brush: groovy;">        cli._(longOpt: 'version', 'Display the JLP version information.')
+
+</pre></td></tr><tr>
+<td class="docs"><dl><dt>--no-source</dt><dd>Do not copy the source files into the output directory alongside the documentation.</dd>
+</dl></td>
+<td class="code"><pre class="brush: groovy;">        cli._(longOpt: 'no-source', 'Do not copy the source files into the' +
+            ' output directory alongside the documentation.')
+
+</pre></td></tr><tr>
+<td class="docs"><h4>Parse the options.</h4></td>
+<td class="code"><pre class="brush: groovy;">        def opts = cli.parse(args)
+
+</pre></td></tr><tr>
+<td class="docs"><p>Display help and version information if requested.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (opts.h) {
+            cli.usage()
+            return }
+
+        if (opts.version) {
+            println &quot;JLP v$VERSION&quot;
+            return }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Get the relative path root (or set to current directory if it was not given)</p></td>
+<td class="code"><pre class="brush: groovy;">        def pathRoot = new File(opts.&quot;relative-path-root&quot; ?: &quot;.&quot;)
+        log.debug(&quot;Relative path root: '{}'.&quot;, pathRoot.canonicalPath)
+
+</pre></td></tr><tr>
+<td class="docs"><p>If our root is non-existant we will print an error and exit.. This is possible if a relative path root was passed as an option.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (!pathRoot.exists() || !pathRoot.isDirectory()) {
+            System.err.println &quot;'${pathRoot.path}' is not a valid directory.&quot;
+            System.exit(1) }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Get the output directory, either from the command line or by default.</p></td>
+<td class="code"><pre class="brush: groovy;">        def outputDir = opts.o ? new File(opts.o) : new File(&quot;jlp-docs&quot;)
+
+</pre></td></tr><tr>
+<td class="docs"><p>Resolve the output directory against our relative root</p></td>
+<td class="code"><pre class="brush: groovy;">        if (!outputDir.isAbsolute()) {
+            outputDir = new File(pathRoot, outputDir.path) }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Create the output directory if it does not exist.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (!outputDir.exists()) outputDir.mkdirs()
+
+        log.debug(&quot;Output directory: '{}'.&quot;, outputDir.canonicalPath)
+
+</pre></td></tr><tr>
+<td class="docs"><p>Get the CSS theme to use. We will start by assuming the default will be used.</p></td>
+<td class="code"><pre class="brush: groovy;">        def css = JLPMain.class.getResourceAsStream(&quot;/css/jlp.css&quot;)
+
+</pre></td></tr><tr>
+<td class="docs"><p>If the CSS file was specified on the command-line, let's look for it.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (opts.'css-file') {
+            def cssFile = new File(opts.'css-file')
+
+</pre></td></tr><tr>
+<td class="docs"><p>Resolve the file against our relative root.</p></td>
+<td class="code"><pre class="brush: groovy;">            if (!cssFile.isAbsolute()) {
+                cssFile = new File(pathRoot, cssFile.path) }
+                
+</pre></td></tr><tr>
+<td class="docs"><p>Finally, make sure the CSS file actually exists.</p></td>
+<td class="code"><pre class="brush: groovy;">            if (cssFile.exists()) {
+                css = cssFile
+                log.debug(&quot;Loading CSS from this file: '{}'.&quot;,
+                    cssFile.canonicalPath) }
+
+</pre></td></tr><tr>
+<td class="docs"><p>If it does not, we are going to warn the user and keep the default.</p></td>
+<td class="code"><pre class="brush: groovy;">            else {
+                println &quot;WARN: Could not fine the custom CSS file: '&quot; +
+                    &quot;${cssFile.canonicalPath}'.&quot;
+                println &quot;      Using the default CSS.&quot; }}
+
+</pre></td></tr><tr>
+<td class="docs"><p>Look for our <code>--no-source</code> option.</p></td>
+<td class="code"><pre class="brush: groovy;">        def includeSource = !opts.&quot;no-source&quot;
+
+</pre></td></tr><tr>
+<td class="docs"><h4>Create the input file list.</h4></td>
+<td class="code"><pre class="brush: groovy;">
+</pre></td></tr><tr>
+<td class="docs"><p>We will start with the filenames passed as arguments on the command line.</p></td>
+<td class="code"><pre class="brush: groovy;">        def filenames = opts.getArgs()
+        def inputFiles = []
+
+        filenames.each { filename -&gt;
+
+</pre></td></tr><tr>
+<td class="docs"><p>For each filename we try to resolve it to an actual file relative to our root.</p></td>
+<td class="code"><pre class="brush: groovy;">            File file = new File(filename)
+            if (!file.isAbsolute()) { file = new File(pathRoot, filename) } 
+
+</pre></td></tr><tr>
+<td class="docs"><p>If this file does not exist, warn the user and skip it.</p></td>
+<td class="code"><pre class="brush: groovy;">            if (!file.exists()) {
+                System.err.println(
+                    &quot;'${file.canonicalPath}' does not exist: ignored.&quot;)
+                return }
+                
+</pre></td></tr><tr>
+<td class="docs"><p>If this file is a directory, we want to add all the files in it to our input list, recursing into all the subdirectories and adding their files as well. We will ignore hidden files.</p></td>
+<td class="code"><pre class="brush: groovy;">            if (file.isDirectory()) { file.eachFileRecurse {
+                if (it.isFile() &amp;&amp; !it.isHidden()) { inputFiles &lt;&lt; it }}}
+
+</pre></td></tr><tr>
+<td class="docs"><p>Not a directory, just add the file.</p></td>
+<td class="code"><pre class="brush: groovy;">            else { inputFiles &lt;&lt; file } }
+
+</pre></td></tr><tr>
+<td class="docs"><h4>Process the files.</h4></td>
+<td class="code"><pre class="brush: groovy;">        log.trace(&quot;Starting JLP processor.&quot;)
+        Processor.process(outputDir, css, inputFiles, includeSource)
+    }
+
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

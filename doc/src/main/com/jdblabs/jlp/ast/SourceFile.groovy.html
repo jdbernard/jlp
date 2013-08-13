@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>SourceFile.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>SourceFile</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp.ast
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/ast/SourceFile'>
+<td class="docs"><p>The top-level AST element. This represents a source file.</p></td>
+<td class="code"><pre class="brush: groovy;">
+public class SourceFile {
+    </pre></td></tr><tr>
+<td class="docs"><p>The source file gets split into two parts during the initial parsing by the PEG grammer: a list of documentation blocks and a list of code blocks. Both are stored in the <code>Blocks</code> but the code block may get processed again if there is a language-specific parser involved for code awareness. In this case, we will keep a copy of the result of that parsing here as well. </p></td>
+<td class="code"><pre class="brush: groovy;">
+
+</pre></td></tr><tr>
+<td class="docs"><p>A list of the blocks in this <code>SourceFile</code>.</p></td>
+<td class="code"><pre class="brush: groovy;">    public List&lt;ASTNode&gt; blocks = []
+
+</pre></td></tr><tr>
+<td class="docs"><p>The result from parsing the code in this source file. Currently there are no language-specific parsers and this is always <code>null</code>.</p></td>
+<td class="code"><pre class="brush: groovy;">    public def codeAST
+
+</pre></td></tr><tr>
+<td class="docs"><p>The id for this source file, currently set to the path name for the input file relative to the input root.</p></td>
+<td class="code"><pre class="brush: groovy;">    public String id
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

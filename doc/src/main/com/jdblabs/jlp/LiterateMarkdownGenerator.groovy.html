@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>LiterateMarkdownGenerator.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>LiterateMarkdownGenerator</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp
+
+import com.jdblabs.jlp.ast.*
+import com.jdblabs.jlp.LinkAnchor.LinkType
+import com.jdblabs.jlp.ast.Directive.DirectiveType
+
+import org.pegdown.Extensions
+import org.pegdown.PegDownProcessor
+
+import static org.apache.commons.lang3.StringEscapeUtils.escapeHtml4 as escape
+
+import java.util.List
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/LiterateMarkdownGenerator'>
+<td class="docs"><p>The LiterateMarkdownGenerator is an implementation of <a href="JLPBaseGenerator.groovy.html#jlp.jdb-labs.com/JLPBaseGenerator"><code>JLPBaseGenerator</code></a> that uses <a href="http://daringfireball.net/projects/markdown/">Markdown</a> to process the documentation into HTML output.</p></td>
+<td class="code"><pre class="brush: groovy;">
+public class LiterateMarkdownGenerator extends JLPBaseGenerator {
+
+</pre></td></tr><tr>
+<td class="docs"><p>We will use the <a href="https://github.com/sirthias/pegdown">PegDown</a> library for generating the Markdown output.</p></td>
+<td class="code"><pre class="brush: groovy;">    protected PegDownProcessor pegdown
+
+    public LiterateMarkdownGenerator(Processor processor) {
+        super(processor)
+
+        pegdown = new PegDownProcessor(
+            Extensions.TABLES | Extensions.DEFINITIONS) }
+
+    </pre></td></tr><tr>
+<td class="docs"><h2>Parse phase implementation.</h2></td>
+<td class="code"><pre class="brush: groovy;">
+    //  ===================================
+    </pre></td></tr><tr>
+<td class="docs"><p>Override the parse phase for [<code>SourceFile</code>] nodes. We are interested in detecting an <code>org</code> directive in the first DocBlock, or automatically creating one if it is not defined. The first <code>org</code> directive (found or created) will create a FileLink type LinkAnchor.</p></td>
+<td class="code"><pre class="brush: groovy;">
+
+    protected void parse(SourceFile sourceFile) {
+</pre></td></tr><tr>
+<td class="docs"><p>First we look for an <code>org</code> directive in the first block.</p></td>
+<td class="code"><pre class="brush: groovy;">        def firstOrg = sourceFile.blocks[0].docBlock.directives.find {
+            it.type == DirectiveType.Org }
+
+</pre></td></tr><tr>
+<td class="docs"><p>And we create one if there are none.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (!firstOrg) {
+            def docBlock = sourceFile.blocks[0].docBlock
+            firstOrg = new Directive(processor.currentDocId, 'org', 0, docBlock)
+            docBlock.directives &lt;&lt; firstOrg }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Now parse the file as usual.</p></td>
+<td class="code"><pre class="brush: groovy;">        super.parse(sourceFile)
+
+</pre></td></tr><tr>
+<td class="docs"><p>And mark the first <code>org</code> as a FileLink</p></td>
+<td class="code"><pre class="brush: groovy;">        processor.linkAnchors[firstOrg.value].type = LinkType.FileLink}
+    </pre></td></tr><tr>
+<td class="docs"><p>Override the parse phase for <a href="ast/DocBlock.groovy.html#jlp.jdb-labs.com/ast/DocBlock"><code>DocBlock</code></a> nodes. We are interested in detecting a block that has multilple <code>org</code> directives. When there are multiple org directives in one block we change the LinkAnchor type from block-level links to specific anchors in the text. This allows the author to create a link to exact points within the document.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected void parse(DocBlock docBlock) {
+</pre></td></tr><tr>
+<td class="docs"><p>First parse the block as usual.</p></td>
+<td class="code"><pre class="brush: groovy;">        super.parse(docBlock)
+
+</pre></td></tr><tr>
+<td class="docs"><p>Look for multiple <code>org</code> directives.</p></td>
+<td class="code"><pre class="brush: groovy;">        def orgDirectives = docBlock.directives.findAll {it.type == DirectiveType.Org }
+
+</pre></td></tr><tr>
+<td class="docs"><p>If we have multiple <code>org</code> directives in one <a href="ast/DocBlock.groovy.html#jlp.jdb-labs.com/ast/DocBlock"><code>DocBlock</code></a> then we want to change the corresponding <a href="LinkAnchor.groovy.html#jlp.jdb-labs.com/LinkAnchor"><code>LinkAnchors</code></a> to type <code>AnchorType</code>.</p></td>
+<td class="code"><pre class="brush: groovy;">        if (orgDirectives.size() &gt; 1) {
+            orgDirectives.each { directive -&gt;
+</pre></td></tr><tr>
+<td class="docs"><p>Get the LinkAnchor for this <code>org</code> link.</p></td>
+<td class="code"><pre class="brush: groovy;">                def linkAnchor = processor.linkAnchors[directive.value]
+                linkAnchor.type = LinkType.InlineLink }}}
+    </pre></td></tr><tr>
+<td class="docs"><p>Implement the parse phase for <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a> nodes. We are interested specifically in saving the link anchor information from <em>org</em> directives.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected void parse(Directive directive) {
+        switch(directive.type) {
+            case DirectiveType.Org:
+                LinkAnchor anchor = new LinkAnchor(
+                    id: directive.value,
+                    source: directive,
+                    sourceDocId: processor.currentDocId)
+
+                processor.linkAnchors[anchor.id] = anchor
+                break;
+            default:
+                break // do nothing
+            } }
+    </pre></td></tr><tr>
+<td class="docs"><p>We are not doing any parsing for <a href="ast/CodeBlock.groovy.html#"><code>CodeBlocks</code></a> or <a href="ast/DocText.groovy.html#jlp.jdb-labs.com/ast/DocText"><code>DocTexts</code></a>. We have to implement them, as they are abstract on <a href="JLPBaseGenerator.groovy.html#jlp.jdb-labs.com/JLPBaseGenerator"><code>JLPBaseGenerator</code></a>.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected void parse(CodeBlock codeBlock) {} // nothing to do
+    protected void parse(DocText docText) {} // nothing to do
+
+    </pre></td></tr><tr>
+<td class="docs"><h2>Emit phase implementation.</h2></td>
+<td class="code"><pre class="brush: groovy;">
+    //  ==================================
+    </pre></td></tr><tr>
+<td class="docs"><p>@api Emit a <a href="ast/SourceFile.groovy.html#jlp.jdb-labs.com/ast/SourceFile"><code>SourceFile</code></a>. Each <a href="ast/SourceFile.groovy.html#jlp.jdb-labs.com/ast/SourceFile"><code>SourceFile</code></a> becomes one ouput HTML file. This method is the entry point for a file to be emitted.</p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected String emit(SourceFile sourceFile) {
+        StringBuilder sb = new StringBuilder()
+
+
+</pre></td></tr><tr>
+<td class="docs"><p>Create the HTML head and begin the body. </p></td>
+<td class="code"><pre class="brush: groovy;">        sb.append(
+&quot;&quot;&quot;&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+    &lt;head&gt;
+        &lt;title&gt;${escape(processor.currentDocId)}&lt;/title&gt;
+        &lt;meta http-equiv=&quot;content-type&quot; content=&quot;text/html; charset=UTF-8&quot;&gt;
+        &lt;link type=&quot;text/css&quot; rel=&quot;stylesheet&quot; media=&quot;all&quot;
+            href=&quot;${resolveLink('/.css/jlp.css')}&quot;&gt;&lt;/link&gt;
+
+        &lt;!-- syntax highlighting plugin --&gt;
+        &lt;link type=&quot;text/css&quot; rel=&quot;stylesheet&quot; media=&quot;all&quot;
+            href=&quot;${resolveLink('/.sh/styles/shCoreDefault.css')}&quot;&gt;&lt;/link&gt;
+        &lt;script type=&quot;text/javascript&quot;
+            src=&quot;${resolveLink('/.sh/scripts/XRegExp.js')}&quot;&gt;&lt;/script&gt;
+        &lt;script type=&quot;text/javascript&quot;
+            src=&quot;${resolveLink('/.sh/scripts/shCore.js')}&quot;&gt;&lt;/script&gt;&quot;&quot;&quot;)
+
+</pre></td></tr><tr>
+<td class="docs"><p>If there is a language-specific brush, include it</p></td>
+<td class="code"><pre class="brush: groovy;">        def shBrush = processor.shBrushForSourceType(
+            processor.currentDoc.sourceType)
+
+        if (shBrush) { sb.append(&quot;&quot;&quot;
+
+        &lt;script type=&quot;text/javascript&quot;
+            src=&quot;${resolveLink('/.sh/scripts/' + shBrush + '.js')}&quot;&gt;&lt;/script&gt;&quot;&quot;&quot;) }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Finish our header and begin the body.</p></td>
+<td class="code"><pre class="brush: groovy;">        sb.append(&quot;&quot;&quot;
+        &lt;script type=&quot;text/javascript&quot;&gt;
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        &lt;/script&gt;
+    &lt;/head&gt;
+    &lt;body&gt;
+        &lt;div id=&quot;container&quot;&gt;
+            &lt;table cellpadding=&quot;0&quot; cellspacing=&quot;0&quot;&gt;
+                &lt;tbody&gt;&quot;&quot;&quot;)
+
+</pre></td></tr><tr>
+<td class="docs"><p>Emit all of the blocks in the body of the html file.</p></td>
+<td class="code"><pre class="brush: groovy;">        sourceFile.blocks.each { block -&gt; sb.append(emit(block)) }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Create the HTML footer.</p></td>
+<td class="code"><pre class="brush: groovy;">        sb.append(
+&quot;&quot;&quot;                &lt;/tbody&gt;
+            &lt;/table&gt;
+        &lt;/div&gt;
+    &lt;/body&gt;
+&lt;/html&gt;&quot;&quot;&quot;)
+
+        return sb.toString() }
+    </pre></td></tr><tr>
+<td class="docs"><p>@api Emit a <a href="ast/Block.groovy.html#jlp.jdb-labs.com/ast/Block"><code>Block</code></a>. </p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected String emit(Block block) {
+        StringBuilder sb = new StringBuilder()
+
+</pre></td></tr><tr>
+<td class="docs"><p>Look for an <code>@org</code> directive in the <code>Block</code> that is marked as a block link (we may have many <code>orgs</code> in a block that are not block links).</p></td>
+<td class="code"><pre class="brush: groovy;">        Directive orgDir = block.docBlock.directives.find { directive -&gt;
+            directive.type == DirectiveType.Org &amp;&amp;
+            processor.linkAnchors[directive.value]?.type == LinkType.BlockLink }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Create the <code>tr</code> that will hold the <code>Block</code>. If we found an <code>@org</code> directive we will add the id here.</p></td>
+<td class="code"><pre class="brush: groovy;">        // TODO: should this be escaped?
+        if (orgDir) { sb.append(&quot;\n&lt;tr id='${orgDir.value}'&gt;&quot;) }
+        else        { sb.append(&quot;&lt;tr&gt;&quot;) }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Create the <code>td</code> for the documentation.</p></td>
+<td class="code"><pre class="brush: groovy;">        sb.append('\n&lt;td class=&quot;docs&quot;&gt;')
+        sb.append(emit(block.docBlock))
+        sb.append('&lt;/td&gt;')
+
+</pre></td></tr><tr>
+<td class="docs"><p>Create the <code>td</code> for the <code>CodeBlock</code></p></td>
+<td class="code"><pre class="brush: groovy;">        sb.append('\n&lt;td class=&quot;code&quot;&gt;')
+        sb.append(emit(block.codeBlock))
+        sb.append('&lt;/td&gt;')
+
+</pre></td></tr><tr>
+<td class="docs"><p>Close the table row.</p></td>
+<td class="code"><pre class="brush: groovy;">        sb.append('&lt;/tr&gt;') }
+    </pre></td></tr><tr>
+<td class="docs"><p>@api Emit a <a href="broken_link(jlp/jdb-labs.com/ast/DocBlock)"><code>DocBlock</code></a>. </p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected String emit(DocBlock docBlock) {
+</pre></td></tr><tr>
+<td class="docs"><p>Create a queue for the doc block elements, we are going to sort them by type and line number</p></td>
+<td class="code"><pre class="brush: groovy;">        List emitQueue 
+
+</pre></td></tr><tr>
+<td class="docs"><p>Later we will need a string builder to hold our result.</p></td>
+<td class="code"><pre class="brush: groovy;">        StringBuilder sb
+        </pre></td></tr><tr>
+<td class="docs"><p>We want to treat the whole block as one markdown chunk so we will concatenate the directives and texts and send the whole block at once to the markdown processor.</p></td>
+<td class="code"><pre class="brush: groovy;">
+        emitQueue = docBlock.directives + docBlock.docTexts
+        emitQueue.sort { it.lineNumber }
+    
+        sb = new StringBuilder()
+        emitQueue.each { queueItem -&gt; sb.append(emit(queueItem)) } 
+
+        return processMarkdown(sb.toString())
+    }
+    </pre></td></tr><tr>
+<td class="docs"><p>@api Emit a <a href="ast/CodeBlock.groovy.html#"><code>CodeBlock</code></a>. </p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected String emit(CodeBlock codeBlock) {
+        def codeLines
+
+</pre></td></tr><tr>
+<td class="docs"><p>Collect the lines into an array.</p></td>
+<td class="code"><pre class="brush: groovy;">        codeLines = codeBlock.lines.collect { lineNumber, line -&gt;
+            [lineNumber, line] }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Sort by line number.</p></td>
+<td class="code"><pre class="brush: groovy;">        codeLines.sort({ i1, i2 -&gt; i1[0] - i2[0] } as Comparator)
+
+        codeLines = codeLines.collect { arr -&gt; arr[1] }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Write out the lines in a <code>&lt;pre&gt;</code> block</p></td>
+<td class="code"><pre class="brush: groovy;">        return &quot;&lt;pre class=\&quot;brush: ${processor.currentDoc.sourceType};\&quot;&gt;&quot; +
+            &quot;${escape(codeLines.join(''))}&lt;/pre&gt;&quot; }
+    </pre></td></tr><tr>
+<td class="docs"><p>@api Emit a <a href="ast/DocText.groovy.html#jlp.jdb-labs.com/ast/DocText"><code>DocText</code></a>. </p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected String emit(DocText docText) { return docText.value }
+    </pre></td></tr><tr>
+<td class="docs"><p>@api Emit a <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a>. </p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected String emit(Directive directive) {
+        switch(directive.type) {
+            </pre></td></tr><tr>
+<td class="docs"><p>An <code>@api</code> directive is immediately processed and wrapped in a div (we need to process this now because Markdown does not process input inside HTML elements). </p></td>
+<td class="code"><pre class="brush: groovy;">
+            case DirectiveType.Api:
+                return &quot;&lt;div class='api'&gt;&quot; +
+                    processMarkdown(directive.value) + &quot;&lt;/div&gt;\n&quot;
+
+</pre></td></tr><tr>
+<td class="docs"><p><code>@author</code> directive is turned into a definition list.</p></td>
+<td class="code"><pre class="brush: groovy;">            case DirectiveType.Author:
+                return &quot;Author\n:   ${directive.value}\n&quot;
+
+            case DirectiveType.Copyright:
+                return &quot;\n&amp;copy; ${directive.value}\n&quot;
+
+</pre></td></tr><tr>
+<td class="docs"><p>An <code>@example</code> directive is returned as is.</p></td>
+<td class="code"><pre class="brush: groovy;">            case DirectiveType.Example:
+                return directive.value
+
+            // TODO:
+            // case DirectiveType.Include:
+
+</pre></td></tr><tr>
+<td class="docs"><p>An <code>@org</code> directive may be emitted if the <a href="LinkAnchor.groovy.html#jlp.jdb-labs.com/LinkAnchor"><code>LinkAnchor</code></a> is an <code>InlineLink</code> type.</p></td>
+<td class="code"><pre class="brush: groovy;">            case DirectiveType.Org: 
+                def link = processor.linkAnchors[directive.value]
+                if (link.type == LinkType.InlineLink) {
+                    return &quot;&lt;a id='${directive.value}'&gt;&lt;/a&gt;\n&quot; }
+                else { return &quot;&quot; }}}
+    </pre></td></tr><tr>
+<td class="docs"><p>This is a helper method to process a block of text as Markdown. We need to do some additional processing to deal with <code>jlp://</code> org links that may be present. </p></td>
+<td class="code"><pre class="brush: groovy;">
+    protected String processMarkdown(String markdown) {
+
+</pre></td></tr><tr>
+<td class="docs"><p>Convert to HTML from Markdown</p></td>
+<td class="code"><pre class="brush: groovy;">        String html = pegdown.markdownToHtml(markdown)
+
+</pre></td></tr><tr>
+<td class="docs"><p>Replace internal <code>jlp://</code> links with actual links based on<code>@org</code> references.</p></td>
+<td class="code"><pre class="brush: groovy;">        html = html.replaceAll(/href=['&quot;](jlp:\/\/[^\s&quot;']+)['&quot;]/) { match, link-&gt;
+            return 'href=&quot;' + resolveLink(link) + '&quot;' }
+
+        return html; }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Shortcut for <a href="Processor.groovy.html#jlp.jdb-labs.com/Processor/resolveLink"><code>processor.resolveLink(url, processor.currentDoc)</code></a>.</p></td>
+<td class="code"><pre class="brush: groovy;">    protected String resolveLink(String url) {
+        processor.resolveLink(url, processor.currentDoc) }
+
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>JLPPegParser.java</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../.sh/scripts/shBrushJava.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>JLPPegParser</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: java;">
+package com.jdblabs.jlp;
+
+import com.jdblabs.jlp.ast.*;
+import java.util.ArrayList;
+import java.util.List;
+import org.parboiled.Action;
+import org.parboiled.BaseParser;
+import org.parboiled.Context;
+import org.parboiled.Rule;
+import org.parboiled.annotations.*;
+import org.parboiled.parserunners.ReportingParseRunner;
+
+@BuildParseTree
+public class JLPPegParser extends BaseParser&lt;Object&gt; implements JLPParser {
+
+    int curLineNum = 1;
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/JLPPegParser/constructors'>
+<td class="docs"><h3>Constructors</h3>
+<hr/></td>
+<td class="code"><pre class="brush: java;">    </pre></td></tr><tr>
+<td class="docs"><p>Being a Parboiled parser, this class should not be instantiated by directly calling the constructor, but by calling <code>Parboiled.createParser()</code>.  Here are some examples of how you would instantiate the JLPPegParser:</p>
+<pre><code>// Erlang-style documentation
+Parboiled.createParser(JLPPegParser.class, &quot;%%&quot;);
+
+// C++-style documentation
+Parboiled.createParser(JLPPegParser.class, &quot;/**&quot;, &quot;* /&quot;, &quot;*&quot;, &quot;///&quot;);
+</code></pre></td>
+<td class="code"><pre class="brush: java;">
+    </pre></td></tr><tr>
+<td class="docs"><h4>Full constructor</h4><p>This allows the caller to specific all four of the comment delimiters recognized by the parser.</p></td>
+<td class="code"><pre class="brush: java;">
+    public JLPPegParser(String mdocStart, String mdocEnd,
+        String mdocLineStart, String sdocStart) {
+
+        MDOC_START = String(mdocStart).label(&quot;MDOC_START&quot;);
+        MDOC_END = String(mdocEnd).label(&quot;MDOC_END&quot;);
+        SDOC_START = String(sdocStart).label(&quot;SDOC_START&quot;);
+        MDOC_LINE_START = AnyOf(mdocLineStart).label(&quot;MDOC_LINE_START&quot;); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>Single-line comments only constructor.</h4><p>This allows the caller to easily set up the parser to only recognize single-line comments with no defined syntax for multi-line comments. For example this is used to instantiate a parser for Erlang source files because Erlang has no defined multi-line comment syntax.</p></td>
+<td class="code"><pre class="brush: java;">
+    public JLPPegParser(String sdocStart) {
+        MDOC_START = NOTHING;
+        MDOC_LINE_START = NOTHING;
+        MDOC_END = NOTHING;
+        SDOC_START = String(sdocStart).label(&quot;SDOC_START&quot;); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>Single-line comments only constructor.</h4><p>This is the same as the previous constructor except it allows the caller to define several different syntax for single-line comments. This is useful for languages that support several different syntaxes for comment lines (e.g. bash, Visual FoxPro).</p></td>
+<td class="code"><pre class="brush: java;">
+    public JLPPegParser(List sdocStarts) {
+        MDOC_START = NOTHING;
+        MDOC_LINE_START = NOTHING;
+        MDOC_END = NOTHING;
+        SDOC_START = FirstOf(sdocStarts.toArray()).label(&quot;SDOC_START&quot;); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>Default constructor.</h4><p>The default constructor creates a JLPPegParser configured to recognize comments used by languages like C++ and Java. It follows the convention of using <code>/**</code> to start multiline documentation comments and <code>///</code> to start a single-line comment. This allows the author to choose which comments remain with the code and which are considered part of the formal documentation.</p></td>
+<td class="code"><pre class="brush: java;">
+        this(&quot;</pre></td></tr><tr>
+<td class="docs"><p>, "</p></td>
+<td class="code"><pre class="brush: java;">&quot;, &quot;!#$%^&amp;*()_-=+|;:'\&quot;,&lt;&gt;?~`&quot;, &quot;</pre></td></tr><tr>
+<td class="docs"><p>"); }</p></td>
+<td class="code"><pre class="brush: java;">
+    public SourceFile parse(String input) {
+        ReportingParseRunner rpr = new ReportingParseRunner(this.SourceFile());
+        return (SourceFile) rpr.run(input).resultValue; }
+
+</pre></td></tr><tr>
+<td class="docs"><h3>Parser Rules</h3>
+<hr/></td>
+<td class="code"><pre class="brush: java;">    </pre></td></tr><tr>
+<td class="docs"><h4>SourceFile</h4><p>Parses the rule:</p>
+<pre><code>SourceFile = (Block / DocBlock / CodeBlock)+
+</code></pre><p>Pushes a <a href="ast/SourceFile.groovy.html#jlp.jdb-labs.com/ast/SourceFile"><code>SourceFile</code></a> node on the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    public Rule SourceFile() {
+        return Sequence(
+</pre></td></tr><tr>
+<td class="docs"><p>At the start of processing a new SourceFile, we need to set up our internal state. </p></td>
+<td class="code"><pre class="brush: java;">
+</pre></td></tr><tr>
+<td class="docs"><p>Clear the line count.</p></td>
+<td class="code"><pre class="brush: java;">            clearLineCount(),
+
+</pre></td></tr><tr>
+<td class="docs"><p>Add the top-level SourceFile AST node.</p></td>
+<td class="code"><pre class="brush: java;">            push(new SourceFile()),
+
+</pre></td></tr><tr>
+<td class="docs"><p>A SourceFile is made up of one or more Blocks</p></td>
+<td class="code"><pre class="brush: java;">            OneOrMore(Sequence(
+</pre></td></tr><tr>
+<td class="docs"><p>All of these options result in one new Block pushed onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">                FirstOf(
+
+</pre></td></tr><tr>
+<td class="docs"><p>Match a whole Block. This pushes a Block on the stack.</p></td>
+<td class="code"><pre class="brush: java;">                    Block(),    
+
+</pre></td></tr><tr>
+<td class="docs"><p>A standalone DocBlock. We will create an empty CodeBlock to pair with it, then push a new Block onto the stack made from the DocBlock and the empty CodeBlock</p></td>
+<td class="code"><pre class="brush: java;">                    Sequence(
+</pre></td></tr><tr>
+<td class="docs"><ol>
+  <li>We need to remember the line number to create the  Block</li>
+</ol></td>
+<td class="code"><pre class="brush: java;">                        push(curLineNum),
+
+</pre></td></tr><tr>
+<td class="docs"><ol>
+  <li>Match the DocBlock.</li>
+</ol></td>
+<td class="code"><pre class="brush: java;">                        DocBlock(),
+
+</pre></td></tr><tr>
+<td class="docs"><ol>
+  <li>Create the empty CodeBlock.</li>
+</ol></td>
+<td class="code"><pre class="brush: java;">                        push(new CodeBlock(curLineNum)),
+
+</pre></td></tr><tr>
+<td class="docs"><ol>
+  <li>Create the Block and push it onto the stack.</li>
+</ol></td>
+<td class="code"><pre class="brush: java;">                        push(new Block((CodeBlock) pop(), (DocBlock) pop(),
+                            popAsInt()))),
+
+</pre></td></tr><tr>
+<td class="docs"><p>A standalone CodeBlock. Similar to the standalone DocBlock, we will create an empty DocBlock to pair with the CodeBlock to make a Block, which is pushed onto the stack:</p><p><em>Note: With the way the parser is currently written,</em> <em>this will only match a CodeBlock that occurs before</em> <em>any DocBlock.</em></p></td>
+<td class="code"><pre class="brush: java;">                    Sequence(
+</pre></td></tr><tr>
+<td class="docs"><ol>
+  <li>Remember the line number for the Block.</li>
+</ol></td>
+<td class="code"><pre class="brush: java;">                        push(curLineNum),
+
+</pre></td></tr><tr>
+<td class="docs"><ol>
+  <li>Create the empty DocBlock.</li>
+</ol></td>
+<td class="code"><pre class="brush: java;">                        push(new DocBlock(curLineNum)),
+
+</pre></td></tr><tr>
+<td class="docs"><ol>
+  <li>Match the CodeBlock</li>
+</ol></td>
+<td class="code"><pre class="brush: java;">                        CodeBlock(),
+
+</pre></td></tr><tr>
+<td class="docs"><ol>
+  <li>Create the Block and push it onto the stack</li>
+</ol></td>
+<td class="code"><pre class="brush: java;">                        push(new Block((CodeBlock) pop(), (DocBlock) pop(),
+                            popAsInt())))),
+
+</pre></td></tr><tr>
+<td class="docs"><p>pop the Block created by one of the above options and add it to the SourceFile</p></td>
+<td class="code"><pre class="brush: java;">                addBlockToSourceFile((Block) pop())))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>Block</h4><p>Parses the rule:</p>
+<pre><code>Block = DocBlock CodeBlock
+</code></pre><p>Pushes a <a href="ast/Block.groovy.html#jlp.jdb-labs.com/ast/Block"><code>Block</code></a> onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule Block() {
+        return Sequence(
+            push(curLineNum),
+            DocBlock(), CodeBlock(),
+
+</pre></td></tr><tr>
+<td class="docs"><p>A DocBlock and a CodeBlock are pushed onto the stack by the above rules. Pop them off, along with the line number we pushed before that, and create a new Block node.</p></td>
+<td class="code"><pre class="brush: java;">            push(new Block((CodeBlock) pop(), (DocBlock) pop(), popAsInt()))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>DocBlock</h4><p>Parses the rule:</p>
+<pre><code>DocBlock = SDocBlock / MDocBlock
+</code></pre><p>Pushes a <a href="ast/DocBlock.groovy.html#jlp.jdb-labs.com/ast/DocBlock"><code>DocBlock</code></a> onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule DocBlock() { return FirstOf(SDocBlock(), MDocBlock()); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>SDocBlock</h4><p>Parses the rule:</p>
+<pre><code>SDocBlock = (SDirective / SDocText)+
+</code></pre><p>Pushes a <a href="ast/DocBlock.groovy.html#jlp.jdb-labs.com/ast/DocBlock"><code>DocBlock</code></a> onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule SDocBlock() {
+        return Sequence(
+            push(new DocBlock(curLineNum)),
+            OneOrMore(Sequence(
+                FirstOf(SDirective(), SDocText()),
+                addToDocBlock((ASTNode) pop())))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>MDocBlock</h4><p>Parses the rule:</p>
+<pre><code>MDocBlock = MDOC_START (MDirective / MDocText)+ MDOC_END
+</code></pre><p>Pushes a <a href="ast/DocBlock.groovy.html#jlp.jdb-labs.com/ast/DocBlock"><code>DocBlock</code></a> onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule MDocBlock() {
+        return Sequence(
+            push(new DocBlock(curLineNum)),
+            MDOC_START,
+            ZeroOrMore(Sequence(
+</pre></td></tr><tr>
+<td class="docs"><p>We need to be careful to exclude <code>MDOC_END</code> here, as there can be some confusion otherwise between the start of a line with <code>MDOC_LINE_START</code> and <code>MDOC_END</code> depending on what values the user has chosen for them</p></td>
+<td class="code"><pre class="brush: java;">                TestNot(MDOC_END), FirstOf(MDirective(), MDocText()),
+                addToDocBlock((ASTNode) pop()))),
+    </pre></td></tr><tr>
+<td class="docs"><h4>CodeBlock</h4><p>Parses the rule:</p>
+<pre><code>CodeBlock = (RemainingCodeLine)+
+</code></pre><p>Pushes a <a href="ast/CodeBlock.groovy.html#"><code>CodeBlock</code></a> onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule CodeBlock() {
+        return Sequence(
+            push(new CodeBlock(curLineNum)),
+            OneOrMore(Sequence(RemainingCodeLine(),
+                addToCodeBlock(match())))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>SDirective</h4><p>Parses the rule:</p>
+<pre><code>SDirective = SDocLineStart AT (SLongDirective / SShortDirective)
+</code></pre><p>Pushes a <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a> node on the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule SDirective() {
+        return Sequence(
+            SDocLineStart(), AT, FirstOf(SLongDirective(), SShortDirective())); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>MDirective</h4><p>Parses the rule:</p>
+<pre><code>MDirective = MDocLineStart? AT (MLongDirective / MShortDirective)
+</code></pre><p>Pushes a <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a> node onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule MDirective() {
+        return Sequence(
+            Optional(MDocLineStart()),
+            AT, FirstOf(MLongDirective(), MShortDirective())); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>SLongDirective</h4><p>Parses the rule:</p>
+<pre><code>SLongDirective =
+ (API_DIR / EXAMPLE_DIR) RemainingSDocLine SDocText?
+</code></pre><p>Pushes a <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a> node onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule SLongDirective() {
+        return Sequence(
+            push(curLineNum),
+
+            FirstOf(API_DIR, EXAMPLE_DIR),  push(match()),
+            RemainingSDocLine(),            push(match()),
+
+            Optional(Sequence(
+                SDocText(),
+                swap(),
+                push(popAsString() + ((DocText) pop()).value))),
+                
+            push(new Directive(popAsString(), popAsString(), popAsInt(),
+                (DocBlock)peek()))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>MLongDirective</h4><p>Parses the rule:</p>
+<pre><code>MLongDirective = 
+ (API_DIR / EXAMPLE_DIR) RemainingMDocLine MDocText?
+</code></pre><p>Pushes a <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a> node onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule MLongDirective() {
+        return Sequence(
+            push(curLineNum),
+
+            FirstOf(API_DIR, EXAMPLE_DIR), push(match()),
+            RemainingMDocLine(),           push(match()),
+
+            Optional(Sequence(
+                MDocText(),
+                swap(),
+                push(popAsString() + ((DocText) pop()).value))),
+
+            push(new Directive(popAsString(), popAsString(), popAsInt(),
+                (DocBlock) peek()))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>SShortDirective</h4><p>Parses the rule:</p>
+<pre><code>SShortDirective =
+  (AUTHOR_DIR / ORG_DIR / INCLUDE_DIR / COPYRIGHT_DIR)
+  RemainingSDocLine
+</code></pre><p>Pushes a <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a> node onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule SShortDirective() {
+        return Sequence(
+            push(curLineNum),
+            FirstOf(AUTHOR_DIR, ORG_DIR, INCLUDE_DIR, COPYRIGHT_DIR), push(match()),
+            RemainingSDocLine(),
+            
+            push(new Directive(match().trim(), popAsString(), popAsInt(),
+                (DocBlock) peek()))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>MShortDirective</h4><p>Parses the rule:</p>
+<pre><code>MShortDirective =
+  (AUTHOR_DIR / ORG_DIR / INCLUDE_DIR / COPYRIGHT_DIR)
+  RemainingMDocLine
+</code></pre><p>Pushes a <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a> node onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule MShortDirective() {
+        return Sequence(
+            push(curLineNum),
+            FirstOf(AUTHOR_DIR, ORG_DIR, INCLUDE_DIR, COPYRIGHT_DIR), push(match()),
+            RemainingMDocLine(),
+
+            push(new Directive(match().trim(), popAsString(), popAsInt(),
+                (DocBlock) peek()))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>SDocText</h4><p>Parses the rule:</p>
+<pre><code>SDocText = (SDocLineStart !AT RemainingSDocLine)+
+</code></pre><p>Pushes a <a href="ast/DocText.groovy.html#jlp.jdb-labs.com/ast/DocText"><code>DocText</code></a> node onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule SDocText() {
+        return Sequence(
+            push(new DocText(curLineNum)),
+            OneOrMore(Sequence(
+                SDocLineStart(), TestNot(AT), RemainingSDocLine(),
+                addToDocText(match())))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>MDocText</h4><p>Parses the rule:</p>
+<pre><code>MDocText = (MDocLineStart? !AT RemainingMDocLine)+
+</code></pre><p>Pushes a <a href="ast/DocText.groovy.html#jlp.jdb-labs.com/ast/DocText"><code>DocText</code></a> node onto the stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    Rule MDocText() {
+        return Sequence(
+            push(new DocText(curLineNum)),
+            OneOrMore(Sequence(
+                Optional(MDocLineStart()),
+                TestNot(AT), RemainingMDocLine(),
+                addToDocText(match())))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>SDocLineStart</h4><p>Parses the rule:</p>
+<pre><code>SDocLineStart = SPACE* SDOC_START SPACE?
+</code></pre></td>
+<td class="code"><pre class="brush: java;">
+    Rule SDocLineStart() {
+        return Sequence(
+            ZeroOrMore(SPACE), SDOC_START, Optional(SPACE)); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>MDocLineStart</h4><p>Parses the rule:</p>
+<pre><code>MDocLineStart = SPACE* !MDOC_END MDOC_LINE_START SPACE?
+</code></pre></td>
+<td class="code"><pre class="brush: java;">
+    Rule MDocLineStart() {
+        return Sequence(
+            ZeroOrMore(SPACE), TestNot(MDOC_END), MDOC_LINE_START, Optional(SPACE)); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>RemainingSDocLine</h4><p>Parses the rule:</p>
+<pre><code>RemainingSDocLine = ((!EOL)* EOL) / ((!EOL)+ EOI)
+</code></pre></td>
+<td class="code"><pre class="brush: java;">
+    Rule RemainingSDocLine() {
+        return FirstOf(
+            Sequence(ZeroOrMore(NOT_EOL), EOL, incLineCount()),
+            Sequence(OneOrMore(NOT_EOL), EOI, incLineCount())); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>RemainingMDocLine</h4><p>Parses the rule:</p>
+<pre><code>RemainingMDocLine = 
+ ((!(EOL / MDOC_END))* EOL) /
+ ((!MDOC_END)+)
+</code></pre></td>
+<td class="code"><pre class="brush: java;">
+    Rule RemainingMDocLine() {
+        return FirstOf(
+</pre></td></tr><tr>
+<td class="docs"><p>End of line, still within the an M-style comment block</p></td>
+<td class="code"><pre class="brush: java;">            Sequence(
+                ZeroOrMore(Sequence(TestNot(FirstOf(EOL, MDOC_END)), ANY)),
+                EOL,
+                incLineCount()),
+
+</pre></td></tr><tr>
+<td class="docs"><p>End of M-style comment block</p></td>
+<td class="code"><pre class="brush: java;">            OneOrMore(Sequence(TestNot(MDOC_END), ANY))); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>RemainingCodeLine</h4><p>Parses the rule:</p>
+<pre><code>RemainingCodeLine = 
+ ((!(EOL / MDOC_START / SDocLineStart))* EOL) /
+ (!(MDOC_START / SDocLineStart))+
+</code></pre></td>
+<td class="code"><pre class="brush: java;">
+    Rule RemainingCodeLine() {
+        return FirstOf(
+</pre></td></tr><tr>
+<td class="docs"><p>End of line, still within the code block.</p></td>
+<td class="code"><pre class="brush: java;">            Sequence(
+                ZeroOrMore(Sequence(
+                    TestNot(FirstOf(EOL, MDOC_START, SDocLineStart())),
+                    ANY)),
+                EOL,
+                incLineCount()),
+
+</pre></td></tr><tr>
+<td class="docs"><p>Found an MDOC_START or SDocLineStart</p></td>
+<td class="code"><pre class="brush: java;">            OneOrMore(Sequence(TestNot(FirstOf(MDOC_START, SDocLineStart())), ANY))); }
+
+</pre></td></tr><tr>
+<td class="docs"><h3>Terminal Rules</h3>
+<hr/></td>
+<td class="code"><pre class="brush: java;">
+</pre></td></tr><tr>
+<td class="docs"><h4>Directive terminals</h4></td>
+<td class="code"><pre class="brush: java;">    Rule API_DIR        = IgnoreCase(&quot;api&quot;);
+    Rule AUTHOR_DIR     = IgnoreCase(&quot;author&quot;);
+    Rule COPYRIGHT_DIR  = IgnoreCase(&quot;copyright&quot;);
+    Rule EXAMPLE_DIR    = IgnoreCase(&quot;example&quot;);
+    Rule INCLUDE_DIR    = IgnoreCase(&quot;include&quot;);
+    Rule ORG_DIR        = IgnoreCase(&quot;org&quot;);
+
+</pre></td></tr><tr>
+<td class="docs"><h4>Hard-coded terminals.</h4></td>
+<td class="code"><pre class="brush: java;">    Rule AT         = Ch('@').label(&quot;AT&quot;);
+    Rule EOL        = FirstOf(String(&quot;\r\n&quot;), Ch('\n'), Ch('\r')).label(&quot;EOL&quot;);
+    Rule NOT_EOL    = Sequence(TestNot(EOL), ANY).label(&quot;NOT_EOL&quot;);
+    Rule SPACE      = AnyOf(&quot; \t&quot;).label(&quot;SPACE&quot;);
+
+</pre></td></tr><tr>
+<td class="docs"><h4>Configurable terminals</h4></td>
+<td class="code"><pre class="brush: java;">    Rule MDOC_START;
+    Rule MDOC_END;
+    Rule MDOC_LINE_START;
+    Rule SDOC_START;
+
+</pre></td></tr><tr>
+<td class="docs"><h3>Utility/Helper Functions.</h3>
+<hr/></td>
+<td class="code"><pre class="brush: java;">
+</pre></td></tr><tr>
+<td class="docs"><p>The <code>popAs</code> functions exist primarily to make the parser rules more readable by providing shortcuts for common casts.</p></td>
+<td class="code"><pre class="brush: java;">    String popAsString() { return (String) pop(); }
+    Integer popAsInt() { return (Integer) pop(); }
+
+</pre></td></tr><tr>
+<td class="docs"><p>Line number management functions.</p></td>
+<td class="code"><pre class="brush: java;">    boolean clearLineCount() { curLineNum = 1; return true; }
+    boolean incLineCount() { curLineNum++; return true; }
+    </pre></td></tr><tr>
+<td class="docs"><h4>addToDocBlock</h4><p>Add the given block to the <a href="ast/SourceFile.groovy.html#jlp.jdb-labs.com/ast/SourceFile"><code>SourceFile</code></a> node expected to be at the top of the parser value stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    boolean addBlockToSourceFile(Block block) {
+        ((SourceFile) peek()).blocks.add(block);
+        return true; }
+    </pre></td></tr><tr>
+<td class="docs"><h4>addToDocBlock</h4><p>Add the given <a href="ast/Directive.groovy.html#jlp.jdb-labs.com/ast/Directive"><code>Directive</code></a> or <a href="ast/DocText.groovy.html#jlp.jdb-labs.com/ast/DocText"><code>DocText</code></a> to the <a href="ast/DocBlock.groovy.html#jlp.jdb-labs.com/ast/DocBlock"><code>DocBlock</code></a> expected to be at the top of the parser value stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    boolean addToDocBlock(ASTNode an) {
+        DocBlock docBlock = (DocBlock) pop();
+        if (an instanceof Directive) {
+            docBlock.directives.add((Directive) an); }
+        else if (an instanceof DocText) {
+            docBlock.docTexts.add((DocText) an); }
+        else { throw new IllegalStateException(); }
+        return push(docBlock); }
+        
+    boolean addToCodeBlock(String line) {
+        CodeBlock codeBlock = (CodeBlock) pop();
+        codeBlock.lines.put(curLineNum - 1, line);
+        return push(codeBlock); }
+
+    boolean addToDocText(String line) {
+        DocText docText = (DocText) pop();
+        docText.value += line;
+        return push(docText); }
+    </pre></td></tr><tr>
+<td class="docs"><h4>printValueStack</h4><p>A method to help with debugging. It can be called during the parser rules. When called it prints out the current contents of the parser value stack.</p></td>
+<td class="code"><pre class="brush: java;">
+    boolean printValueStack() {
+        for (int i = 0; i &lt; getContext().getValueStack().size(); i++) {
+            System.out.println(i + &quot;: &quot; + peek(i)); }
+        return true; }
+
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>

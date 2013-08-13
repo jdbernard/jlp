@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Block.groovy</title>
+        <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../../.css/jlp.css"></link>
+
+        <!-- syntax highlighting plugin -->
+        <link type="text/css" rel="stylesheet" media="all"
+            href="../../../../../../.sh/styles/shCoreDefault.css"></link>
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/XRegExp.js"></script>
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/shCore.js"></script>
+
+        <script type="text/javascript"
+            src="../../../../../../.sh/scripts/shBrushGroovy.js"></script>
+        <script type="text/javascript">
+            SyntaxHighlighter.defaults.light = true;
+            SyntaxHighlighter.defaults.unindent = false;
+            SyntaxHighlighter.all();
+        </script>
+    </head>
+    <body>
+        <div id="container">
+            <table cellpadding="0" cellspacing="0">
+                <tbody><tr>
+<td class="docs"><h1>Block</h1>
+<dl><dt>Author</dt><dd>Jonathan Bernard (jdb@jdb-labs.com)</dd>
+</dl><p>&copy; 2011-2012 <a href="http://jdb-labs.com">JDB Labs LLC</a></p></td>
+<td class="code"><pre class="brush: groovy;">
+package com.jdblabs.jlp.ast
+
+</pre></td></tr>
+<tr id='jlp.jdb-labs.com/ast/Block'>
+<td class="docs"><p>ASTNode for <code>Blocks</code>.</p></td>
+<td class="code"><pre class="brush: groovy;">
+public class Block extends ASTNode {
+    public final DocBlock docBlock
+    public final CodeBlock codeBlock
+
+    public Block(CodeBlock cb, DocBlock db, int lineNum) {
+        super(lineNum); docBlock = db; codeBlock = cb }
+
+    public String toString() {
+        &quot;[${lineNumber}:Block: ${docBlock}, ${codeBlock}]&quot; }
+}
+</pre></td></tr>                </tbody>
+            </table>
+        </div>
+    </body>
+</html>
