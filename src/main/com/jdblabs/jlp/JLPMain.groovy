@@ -37,19 +37,19 @@ public class JLPMain {
         /// :   Print help information.
         cli.h('Print this help information.', longOpt: 'help', required: false)
 
-        /// -o, --outputdir
+        /// -o, --outputdir <output-directory>
         /// :   Set the output directory where the documentation will be
         ///     written.
         cli.o("Output directory (defaults to 'jlp-docs').",
             longOpt: 'output-dir', args: 1, argName: "output-dir",
             required: false)
 
-        /// --css-file
+        /// --css-file <file>
         /// :   Specify an alternate CSS file for the output documentation.
         cli._('Use <css-file> for the documentation css.',
             longOpt: 'css-file', args: 1, required: false, argName: 'css-file')
 
-        /// --relative-path-root
+        /// --relative-path-root <root-directory>
         /// :   Override the current working directory. This is useful if you
         ///     are invoking jlp remotely, or if the current working directory
         ///     is incorrectly set by the executing environment.

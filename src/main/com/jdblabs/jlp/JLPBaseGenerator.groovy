@@ -18,7 +18,7 @@ public abstract class JLPBaseGenerator {
 
     /**
      * The generator works in close conjunction with a JLP Processor.
-     * This tight coupling in intended for these two classes. The distiction
+     * This tight coupling is intended for these two classes. The distiction
      * between the two classes is scope. The Processor class is concerned with
      * data and behavior common to the whole documentation process whereas the
      * Generator is concerned only with one file. The Generator does have

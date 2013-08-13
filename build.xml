@@ -1,6 +1,6 @@
 <project name="Jonathan's Literate Programming" basedir="." default="release">
 
-    <import file="jdb-build-1.9.xml"/>
+    <import file="jdb-build-1.10.xml"/>
     <property environment="env"/>
     <property file="project.properties"/>
 

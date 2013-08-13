@@ -117,7 +117,7 @@
     <target name="-compile-groovy" depends="-init,-init-groovy,-lib,-lib-groovy">
         <mkdir dir="${build.dir}/main/classes"/>
         <groovyc srcdir="${src.dir}/main" destdir="${build.dir}/main/classes"
-            includeAntRuntime="false">
+            includeAntRuntime="false" fork="true">
 
             <classpath>
                 <path refid="groovy.classpath"/>
@@ -139,7 +139,7 @@
     <target name="-compile-tests-groovy" depends="-init,compile">
         <mkdir dir="${build.dir}/test/classes"/>
         <groovyc srcdir="${src.dir}/test" destdir="${build.dir}/test/classes"
-            includeAntRuntime="false">
+            includeAntRuntime="false" fork="true">
             
             <classpath>
                 <path refid="groovy.classpath"/>

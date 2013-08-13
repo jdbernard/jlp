@@ -130,10 +130,8 @@ public class Processor {
             def relPath = getRelativeFilepath(inputRoot, file)
             def pathParts = relPath.split('/') as List
 
-            // Get our file type.
-            def fileType = sourceTypeForFile(file)
-
             // We will skip binary files and files we know nothing about.
+            def fileType = sourceTypeForFile(file)
             if (fileType == 'binary' || fileType == 'unknown') { return; }
 
             // Start with just the file name.
