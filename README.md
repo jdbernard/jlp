@@ -57,6 +57,11 @@ This project is in its infancy and some of the larger goals are still unmet:
 
 ## Project Architecture
 
+JLP process it's documentation. The latest documentation is available at
+http://jdbernard.github.io/jlp
+
+Below are some starting points.
+
 ### Control and Flow
 
 * [JLPMain](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPMain.groovy.html)
