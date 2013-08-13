@@ -59,12 +59,12 @@ This project is in its infancy and some of the larger goals are still unmet:
 
 ### Control and Flow
 
-* [JLPMain](jlp://jlp.jdb-labs.com/JLPMain)
+* [JLPMain](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPMain.groovy.html)
 
     The entry point to the JLP executable. Parses the command line input and
     sets up the processor.
 
-* [Processor](jlp://jlp.jdb-labs.com/Processor)
+* [Processor](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/Processor)
 
     The Processor processes one batch of input files to create a set of output files.
     It holds the intermediate state needed by the generators and coordinates the
@@ -72,39 +72,36 @@ This project is in its infancy and some of the larger goals are still unmet:
     processor only generates HTML documentation and will likely be renamed in
     the future to reflect this.
 
-* [JLPBaseGenerator](jlp://jlp.jdb-labs.com/JLPBaseGenerator)
+* [JLPBaseGenerator](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPBaseGenerator)
 
     The Generator processes one input file. It parses the AST for the input file
     and emits the final documentation for the file. JLPBaseGenerator
     implementations are expected to be tightly coupled to Processor
     implementations.
 
-* [LiterateMarkdownGenerator](jlp://jlp.jdb-labs.com/LiterateMarkdownGenerator)
+* [LiterateMarkdownGenerator](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/LiterateMarkdownGenerator)
 
     This implemetation of JLPBaseGenerator generates literate-style
-    documentation (as opposed to API-style), using [Markdown] to format the
+    documentation (as opposed to API-style), using
+    [Markdown](http://daringfireball.net/projects/markdown/) to format the
     documentation blocks.
-
-    [Markdown]: http://daringfireball.net/projects/markdown/
 
 ### Parsing
 
-* [JLPParser](jlp://jlp.jdb-labs.com/JLPParser)
+* [JLPParser](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPParser)
 
     A very simple interface for parsing JLP input.
 
-* [JLPPegParser](jlp://jlp.jdb-labs.com/JLPPegParser)
+* [JLPPegParser](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPPegParser)
 
-    A [PEG parser] implemented using the [parboiled] library. This is the
-    default source code parser. It is able to parse JLP documentation but leaves
-    code unparsed. It can be parameterized to fit the differing documentation
-    styles of source languages.
-
-    [PEG parser]: http://en.wikipedia.org/wiki/Parsing_expression_grammar
-    [parboiled]:  http://www.parboiled.org
+    A [PEG parser](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
+    implemented using the [parboiled](http://www.parboiled.org) library. This
+    is the default source code parser. It is able to parse JLP documentation
+    but leaves code unparsed. It can be parameterized to fit the differing
+    documentation styles of source languages.
 
 ### Abstract Syntax Tree
 
-* [SourceFile](jlp://jlp.jdb-labs.com/ast/SourceFile)
+* [SourceFile](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPPegParserSourceFile)
 
     The top-level AST element. This represents a source file.
