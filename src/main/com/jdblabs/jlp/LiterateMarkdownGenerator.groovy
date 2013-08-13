@@ -217,7 +217,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
         /// Close the table row.
         sb.append('</tr>') }
 
-    /** @api Emit a [`DocBlock`](jlp://jlp/jdb-labs.com/ast/DocBlock). */
+    /** @api Emit a [`DocBlock`](jlp://jlp.jdb-labs.com/ast/DocBlock). */
     protected String emit(DocBlock docBlock) {
         /// Create a queue for the doc block elements, we are going to 
         /// sort them by type and line number
