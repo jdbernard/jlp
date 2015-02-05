@@ -1,0 +1,27 @@
+apply plugin: "groovy"
+apply plugin: "maven"
+
+group = "com.jdblabs"
+version = "1.8"
+
+repositories {
+    mavenLocal()
+    mavenCentral() }
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.3.6'
+    compile 'org.pegdown:pegdown:1.4.2' 
+    compile 'org.slf4j:slf4j-api:1.7.10'
+    compile 'ch.qos.logback:logback-core:1.1.2'
+    compile 'ch.qos.logback:logback-classic:1.1.2'
+    compile 'commons-cli:commons-cli:1.2'
+    compile 'org.apache.commons:commons-lang3:3.3.2'
+    compile 'com.jdbernard:jdb-util:3.4'
+    compile 'org.pegdown:pegdown:1.4.2'
+}
+
+jar {
+    manifest {
+        attributes("Main-Class": "com.jdbernard.remindme.DailyAgenda")
+    }
+}

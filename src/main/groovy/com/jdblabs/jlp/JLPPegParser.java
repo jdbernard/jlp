@@ -63,8 +63,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
 
         MDOC_START = FirstOf(mdocStarts.toArray()).label("MDOC_START");
         MDOC_END = FirstOf(mdocEnds.toArray()).label("MDOC_END");
-        SDOC_START = FirstOf(sdocStarts.toArray()).label("SDOC_START");
-        MDOC_LINE_START = AnyOf(mdocLineStart).label("MDOC_LINE_START"); }
+        SDOC_START = FirstOf(mdocStarts.toArray()).label("SDOC_START");
+        MDOC_LINE_START = AnyOf(mdocLineStarts).label("MDOC_LINE_START"); }
 
     /**
      * #### Single-line comments only constructor.
