@@ -128,7 +128,7 @@ public class Processor {
             
             // Get the relative path as path elements.
             def relPath = getRelativeFilepath(inputRoot, file)
-            def pathParts = relPath.split('/') as List
+            def pathParts = relPath.split('/|\\\\') as List
 
             // We will skip binary files and files we know nothing about.
             def fileType = sourceTypeForFile(file)
@@ -304,8 +304,8 @@ public class Processor {
         if (!root.isDirectory()) root= root.parentFile
 
         /// Split both paths into their individual parts.
-        def rootPath = root.canonicalPath.split('/')
-        def filePath = file.canonicalPath.split('/')
+        def rootPath = root.canonicalPath.split('/|\\\\')
+        def filePath = file.canonicalPath.split('/|\\\\')
 
         def relativePath = []
 
@@ -331,8 +331,8 @@ public class Processor {
      * @org jlp.jdb-labs.com/Processor/getCommonParent
      */ 
     public static File getCommonParent(File file1, File file2) {
-            def path1 = file1.canonicalPath.split('/')
-            def path2 = file2.canonicalPath.split('/')
+            def path1 = file1.canonicalPath.split('/|\\\\')
+            def path2 = file2.canonicalPath.split('/|\\\\')
             def newPath = []
 
             // build new commonPath based on matching paths so far
