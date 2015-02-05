@@ -438,8 +438,8 @@ public class Processor {
                     break
                 case 'html': case 'xml':
                     parsers[sourceType] = Parboiled.createParser(
-                        JLPPegParser, '<!--', '-->',
-                        '#$%^&*()_-+=|;:\'",<>?~`', '<<?')
+                        JLPPegParser, '<!--!', '-->',
+                        '!#$%^&*()_-+=|;:\'",<>?~`', '<<?')
                     break
                 case 'sql':
                     parsers[sourceType] = Parboiled.createParser(JLPPegParser,

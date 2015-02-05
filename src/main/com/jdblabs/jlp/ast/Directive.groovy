@@ -50,10 +50,15 @@ public class Directive extends ASTNode {
      *     the [`LinkAnchor`] documentation for more information about link
      *     anchors.
      *
+     * Param
+     * :   Used to document a parameter to a function, method, or subroutine.
+     *     This is typically used in API documentation, but no generator
+     *     currently knows how to do anything intelligent with this directive.
+     *
      * [`LinkAnchor`]: jlp://jlp.jdb-labs.com/LinkAnchor
      */
     public static enum DirectiveType {
-        Api, Author, Copyright, Example, Include, Org;
+        Api, Author, Copyright, Example, Include, Org, Param;
         
         public static DirectiveType parse(String typeString) {
             valueOf(typeString.toLowerCase().capitalize()) } }

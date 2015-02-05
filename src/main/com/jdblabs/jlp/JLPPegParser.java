@@ -40,8 +40,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      */
 
     /**
-     * #### Full constructor
-     * This allows the caller to specific all four of the comment delimiters
+     * #### Full constructor.
+     * This allows the caller to specify all four of the comment delimiters
      * recognized by the parser.
      */
     public JLPPegParser(String mdocStart, String mdocEnd,
@@ -50,6 +50,20 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
         MDOC_START = String(mdocStart).label("MDOC_START");
         MDOC_END = String(mdocEnd).label("MDOC_END");
         SDOC_START = String(sdocStart).label("SDOC_START");
+        MDOC_LINE_START = AnyOf(mdocLineStart).label("MDOC_LINE_START"); }
+
+    /**
+     * #### Full constructor supporting multiple comment types.
+     * This allows the caller to specify all four of the comment delimiters
+     * recognized by the parser, supplying multiple types of comment
+     * delimiters.
+     */
+    public JLPPegParser(List mdocStarts, List mdocEnds,
+        String mdocLineStarts, List sdocStart) {
+
+        MDOC_START = FirstOf(mdocStarts.toArray()).label("MDOC_START");
+        MDOC_END = FirstOf(mdocEnds.toArray()).label("MDOC_END");
+        SDOC_START = FirstOf(sdocStarts.toArray()).label("SDOC_START");
         MDOC_LINE_START = AnyOf(mdocLineStart).label("MDOC_LINE_START"); }
 
     /**
@@ -292,7 +306,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      * Parses the rule:
      *
      *     SLongDirective =
-     *      (API_DIR / EXAMPLE_DIR) RemainingSDocLine SDocText?
+     *      (API_DIR / EXAMPLE_DIR / PARAM_DIR) RemainingSDocLine SDocText?
      *
      * Pushes a [`Directive`] node onto the stack.
      *
@@ -302,8 +316,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
         return Sequence(
             push(curLineNum),
 
-            FirstOf(API_DIR, EXAMPLE_DIR),  push(match()),
-            RemainingSDocLine(),            push(match()),
+            FirstOf(API_DIR, EXAMPLE_DIR, PARAM_DIR),   push(match()),
+            RemainingSDocLine(),                        push(match()),
 
             Optional(Sequence(
                 SDocText(),
@@ -318,7 +332,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
      * Parses the rule:
      *
      *     MLongDirective = 
-     *      (API_DIR / EXAMPLE_DIR) RemainingMDocLine MDocText?
+     *      (API_DIR / EXAMPLE_DIR / PARAM_DIR) RemainingMDocLine MDocText?
      *
      * Pushes a [`Directive`] node onto the stack.
      *
@@ -328,8 +342,8 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
         return Sequence(
             push(curLineNum),
 
-            FirstOf(API_DIR, EXAMPLE_DIR), push(match()),
-            RemainingMDocLine(),           push(match()),
+            FirstOf(API_DIR, EXAMPLE_DIR, PARAM_DIR),   push(match()),
+            RemainingMDocLine(),                        push(match()),
 
             Optional(Sequence(
                 MDocText(),
@@ -497,6 +511,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
     Rule EXAMPLE_DIR    = IgnoreCase("example");
     Rule INCLUDE_DIR    = IgnoreCase("include");
     Rule ORG_DIR        = IgnoreCase("org");
+    Rule PARAM_DIR      = IgnoreCase("param");
 
     /// #### Hard-coded terminals.
     Rule AT         = Ch('@').label("AT");

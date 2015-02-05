@@ -281,6 +281,9 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
             case DirectiveType.Example:
                 return directive.value
 
+            case DirectiveType.Param:
+                return "" // TODO: can we do better here, even though we're
+                           // not understanding the source yet?
             // TODO:
             // case DirectiveType.Include:
 
