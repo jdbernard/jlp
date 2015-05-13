@@ -1,5 +1,8 @@
 # J Literate Programming
 
+* [Source](https://git.jdb-labs.com/jdb-labs/jlp)  
+* [Annotated Source and Documentation](https://doc.jdb-labs.com/jlp/current/)
+
 ## Overview
 *Jonathan's Literate Programming* is my take on literate programming.
 This project grew out of a desire for a documentation system that:
@@ -57,19 +60,19 @@ This project is in its infancy and some of the larger goals are still unmet:
 
 ## Project Architecture
 
-JLP process it's documentation. The latest documentation is available at
-http://jdbernard.github.io/jlp
+JLP processes it's own documentation. The latest documentation is available at
+https://doc.jdb-labs.com/jlp/current/
 
 Below are some starting points.
 
 ### Control and Flow
 
-* [JLPMain](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPMain.groovy.html)
+* [JLPMain](https://doc.jdb-labs.com/jlp/current/src/main/groovy/com/jdblabs/jlp/JLPMain.groovy.html)
 
     The entry point to the JLP executable. Parses the command line input and
     sets up the processor.
 
-* [Processor](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/Processor)
+* [Processor](https://doc.jdb-labs.com/jlp/current/src/main/groovy/com/jdblabs/jlp/Processor.groovy.html)
 
     The Processor processes one batch of input files to create a set of output files.
     It holds the intermediate state needed by the generators and coordinates the
@@ -77,14 +80,14 @@ Below are some starting points.
     processor only generates HTML documentation and will likely be renamed in
     the future to reflect this.
 
-* [JLPBaseGenerator](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPBaseGenerator)
+* [JLPBaseGenerator](https://doc.jdb-labs.com/jlp/current/src/main/groovy/com/jdblabs/jlp/JLPBaseGenerator.groovy.html)
 
     The Generator processes one input file. It parses the AST for the input file
     and emits the final documentation for the file. JLPBaseGenerator
     implementations are expected to be tightly coupled to Processor
     implementations.
 
-* [LiterateMarkdownGenerator](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/LiterateMarkdownGenerator)
+* [LiterateMarkdownGenerator](https://doc.jdb-labs.com/jlp/current/src/main/groovy/com/jdblabs/jlp/LiterateMarkdownGenerator.groovy.html)
 
     This implemetation of JLPBaseGenerator generates literate-style
     documentation (as opposed to API-style), using
@@ -93,11 +96,11 @@ Below are some starting points.
 
 ### Parsing
 
-* [JLPParser](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPParser)
+* [JLPParser](https://doc.jdb-labs.com/jlp/current/src/main/groovy/com/jdblabs/jlp/JLPParser.groovy.html)
 
     A very simple interface for parsing JLP input.
 
-* [JLPPegParser](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPPegParser)
+* [JLPPegParser](https://doc.jdb-labs.com/jlp/current/src/main/groovy/com/jdblabs/jlp/JLPPegParser.groovy.html)
 
     A [PEG parser](http://en.wikipedia.org/wiki/Parsing_expression_grammar)
     implemented using the [parboiled](http://www.parboiled.org) library. This
@@ -107,6 +110,6 @@ Below are some starting points.
 
 ### Abstract Syntax Tree
 
-* [SourceFile](https://jdbernard.github.io/jlp/doc/src/com/jdblabs/jlp/JLPPegParserSourceFile)
+* [SourceFile](https://doc.jdb-labs.com/jlp/current/src/main/groovy/com/jdblabs/jlp/JLPPegParserSourceFile.groovy.html)
 
     The top-level AST element. This represents a source file.

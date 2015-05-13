@@ -248,7 +248,7 @@ public class LiterateMarkdownGenerator extends JLPBaseGenerator {
             [lineNumber, line] }
 
         /// Sort by line number.
-        codeLines.sort({ i1, i2 -> i1[0] - i2[0] } as Comparator)
+        codeLines.sort { i1, i2 -> i1[0] <=> i2[0] }
 
         codeLines = codeLines.collect { arr -> arr[1] }
 
