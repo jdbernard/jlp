@@ -1,6 +1,6 @@
 # J Literate Programming
 
-* [Source](https://git.jdb-labs.com/jdb-labs/jlp)  
+* [Source](https://git.jdb-labs.com/jdb-labs/jlp)
 * [Annotated Source and Documentation](https://doc.jdb-labs.com/jlp/current/)
 
 ## Overview

@@ -124,7 +124,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
     public Rule SourceFile() {
         return Sequence(
             /// At the start of processing a new SourceFile, we need to set up
-            /// our internal state. 
+            /// our internal state.
 
             /// Clear the line count.
             clearLineCount(),
@@ -139,7 +139,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 FirstOf(
 
                     /// Match a whole Block. This pushes a Block on the stack.
-                    Block(),    
+                    Block(),
 
                     /// A standalone DocBlock. We will create an empty CodeBlock
                     /// to pair with it, then push a new Block onto the stack
@@ -218,7 +218,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
     Rule DocBlock() { return FirstOf(SDocBlock(), MDocBlock()); }
 
     /**
-     * #### SDocBlock 
+     * #### SDocBlock
      * Parses the rule:
      *
      *     SDocBlock = (SDirective / SDocText)+
@@ -235,7 +235,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToDocBlock((ASTNode) pop())))); }
 
     /**
-     * #### MDocBlock 
+     * #### MDocBlock
      * Parses the rule:
      *
      *     MDocBlock = MDOC_START (MDirective / MDocText)+ MDOC_END
@@ -257,7 +257,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToDocBlock((ASTNode) pop()))),
             MDOC_END); }
     /**
-     * #### CodeBlock 
+     * #### CodeBlock
      * Parses the rule:
      *
      *     CodeBlock = (RemainingCodeLine)+
@@ -273,7 +273,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToCodeBlock(match())))); }
 
     /**
-     * #### SDirective 
+     * #### SDirective
      * Parses the rule:
      *
      *     SDirective = SDocLineStart AT (SLongDirective / SShortDirective)
@@ -287,7 +287,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             SDocLineStart(), AT, FirstOf(SLongDirective(), SShortDirective())); }
 
     /**
-     * #### MDirective 
+     * #### MDirective
      * Parses the rule:
      *
      *     MDirective = MDocLineStart? AT (MLongDirective / MShortDirective)
@@ -302,7 +302,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             AT, FirstOf(MLongDirective(), MShortDirective())); }
 
     /**
-     * #### SLongDirective 
+     * #### SLongDirective
      * Parses the rule:
      *
      *     SLongDirective =
@@ -323,15 +323,15 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 SDocText(),
                 swap(),
                 push(popAsString() + ((DocText) pop()).value))),
-                
+
             push(new Directive(popAsString(), popAsString(), popAsInt(),
                 (DocBlock)peek()))); }
 
     /**
-     * #### MLongDirective 
+     * #### MLongDirective
      * Parses the rule:
      *
-     *     MLongDirective = 
+     *     MLongDirective =
      *      (API_DIR / EXAMPLE_DIR / PARAM_DIR) RemainingMDocLine MDocText?
      *
      * Pushes a [`Directive`] node onto the stack.
@@ -354,7 +354,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 (DocBlock) peek()))); }
 
     /**
-     * #### SShortDirective 
+     * #### SShortDirective
      * Parses the rule:
      *
      *     SShortDirective =
@@ -370,12 +370,12 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             push(curLineNum),
             FirstOf(AUTHOR_DIR, ORG_DIR, INCLUDE_DIR, COPYRIGHT_DIR), push(match()),
             RemainingSDocLine(),
-            
+
             push(new Directive(match().trim(), popAsString(), popAsInt(),
                 (DocBlock) peek()))); }
 
     /**
-     * #### MShortDirective 
+     * #### MShortDirective
      * Parses the rule:
      *
      *     MShortDirective =
@@ -396,7 +396,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 (DocBlock) peek()))); }
 
     /**
-     * #### SDocText 
+     * #### SDocText
      * Parses the rule:
      *
      *     SDocText = (SDocLineStart !AT RemainingSDocLine)+
@@ -413,7 +413,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToDocText(match())))); }
 
     /**
-     * #### MDocText 
+     * #### MDocText
      * Parses the rule:
      *
      *     MDocText = (MDocLineStart? !AT RemainingMDocLine)+
@@ -431,7 +431,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
                 addToDocText(match())))); }
 
     /**
-     * #### SDocLineStart 
+     * #### SDocLineStart
      * Parses the rule:
      *
      *     SDocLineStart = SPACE* SDOC_START SPACE?
@@ -441,7 +441,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             ZeroOrMore(SPACE), SDOC_START, Optional(SPACE)); }
 
     /**
-     * #### MDocLineStart 
+     * #### MDocLineStart
      * Parses the rule:
      *
      *     MDocLineStart = SPACE* !MDOC_END MDOC_LINE_START SPACE?
@@ -451,7 +451,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             ZeroOrMore(SPACE), TestNot(MDOC_END), MDOC_LINE_START, Optional(SPACE)); }
 
     /**
-     * #### RemainingSDocLine 
+     * #### RemainingSDocLine
      * Parses the rule:
      *
      *     RemainingSDocLine = ((!EOL)* EOL) / ((!EOL)+ EOI)
@@ -462,10 +462,10 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             Sequence(OneOrMore(NOT_EOL), EOI, incLineCount())); }
 
     /**
-     * #### RemainingMDocLine 
+     * #### RemainingMDocLine
      * Parses the rule:
      *
-     *     RemainingMDocLine = 
+     *     RemainingMDocLine =
      *      ((!(EOL / MDOC_END))* EOL) /
      *      ((!MDOC_END)+)
      */
@@ -481,10 +481,10 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             OneOrMore(Sequence(TestNot(MDOC_END), ANY))); }
 
     /**
-     * #### RemainingCodeLine 
+     * #### RemainingCodeLine
      * Parses the rule:
      *
-     *     RemainingCodeLine = 
+     *     RemainingCodeLine =
      *      ((!(EOL / MDOC_START / SDocLineStart))* EOL) /
      *      (!(MDOC_START / SDocLineStart))+
      */
@@ -565,7 +565,7 @@ public class JLPPegParser extends BaseParser<Object> implements JLPParser {
             docBlock.docTexts.add((DocText) an); }
         else { throw new IllegalStateException(); }
         return push(docBlock); }
-        
+
     boolean addToCodeBlock(String line) {
         CodeBlock codeBlock = (CodeBlock) pop();
         codeBlock.lines.put(curLineNum - 1, line);

@@ -125,7 +125,7 @@ public class Processor {
         ///   is more than one file with the same name we will include the
         ///   file's parent directory as well.
         inputFiles.each { file ->
-            
+
             // Get the relative path as path elements.
             def relPath = getRelativeFilepath(inputRoot, file)
             def pathParts = relPath.split('/|\\\\') as List
@@ -160,7 +160,7 @@ public class Processor {
 
             // TODO: better error detection and handling
             currentDoc.sourceAST = parser.parse(currentDoc.sourceFile.text)
-            
+
             if (currentDoc.sourceAST == null) {
                 log.warn("Unable to parse '{}'. Ignoring this document.", currentDocId)
                 badDocs << currentDocId }}
@@ -186,7 +186,7 @@ public class Processor {
 
         /// * Write the output to the output directory.
         processDocs {
-            
+
             /// Create the path and file object for the output file
             String relativePath =
                 getRelativeFilepath(inputRoot, currentDoc.sourceFile)
@@ -238,7 +238,7 @@ public class Processor {
      * :   Return the link as-is.
      *
      * *absolute path (starts with `/`)*
-     * :   Returns the link resolved against the output root. 
+     * :   Returns the link resolved against the output root.
      *
      * *relative path (no leading `/`)*
      * :   Returns the link resolved against the `TargetDoc` passed in.
@@ -281,12 +281,12 @@ public class Processor {
             case ~/^\w+:.*/: return link
 
             /// Absolute link, resolve relative to the output root.
-            case ~/^\/.*/: 
+            case ~/^\/.*/:
                 /// Our link should be the relative path (if needed) plus the
                 /// link without the leading `/`.
                 def relPath = getRelativeFilepath(targetDoc.sourceFile, inputRoot)
                 return (relPath ? "${relPath}/" : "") + link[1..-1]
-            
+
             /// Relative link, resolve using the output root and the source
             /// document relative to the input root.
             default:
@@ -295,7 +295,7 @@ public class Processor {
 
     /**
      * #### getRelativeFilepath
-     * Assuming our current directory is `root`, get the relative path to 
+     * Assuming our current directory is `root`, get the relative path to
      * `file`.
      * @org jlp.jdb-labs.com/Processor/getRelativeFilepath
      */
@@ -329,7 +329,7 @@ public class Processor {
      * #### getCommonParent
      * Find the common parent directory to the given files.
      * @org jlp.jdb-labs.com/Processor/getCommonParent
-     */ 
+     */
     public static File getCommonParent(File file1, File file2) {
             def path1 = file1.canonicalPath.split('/|\\\\')
             def path2 = file2.canonicalPath.split('/|\\\\')
@@ -339,7 +339,7 @@ public class Processor {
             int i = 0
             while (i < Math.min(path1.length, path2.length) &&
                    path1[i] == path2[i]) {
-                
+
                 newPath << path2[i]
                 i++ }
 

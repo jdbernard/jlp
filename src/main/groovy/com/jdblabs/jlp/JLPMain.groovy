@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory
  */
 public class JLPMain {
 
-    public static final String VERSION = "1.9"
+    public static final String VERSION = "1.10"
 
     private static Logger log = LoggerFactory.getLogger(JLPMain.class)
 
@@ -113,7 +113,7 @@ public class JLPMain {
             /// Resolve the file against our relative root.
             if (!cssFile.isAbsolute()) {
                 cssFile = new File(pathRoot, cssFile.path) }
-                
+
             /// Finally, make sure the CSS file actually exists.
             if (cssFile.exists()) {
                 css = cssFile
@@ -142,14 +142,14 @@ public class JLPMain {
             /// For each filename we try to resolve it to an actual file
             /// relative to our root.
             File file = new File(filename)
-            if (!file.isAbsolute()) { file = new File(pathRoot, filename) } 
+            if (!file.isAbsolute()) { file = new File(pathRoot, filename) }
 
             /// If this file does not exist, warn the user and skip it.
             if (!file.exists()) {
                 System.err.println(
                     "'${file.canonicalPath}' does not exist: ignored.")
                 return }
-                
+
             /// If this file is a directory, we want to add all the files in it
             /// to our input list, recursing into all the subdirectories and
             /// adding their files as well. We will ignore hidden files.
